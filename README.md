@@ -57,7 +57,7 @@ AponKhoj aims to bridge the gap in locating missing persons and reuniting found 
 
 ##  UI Design
 
-Figma Mockup: [ ]
+Figma Mockup: [https://www.figma.com/proto/xv6jClk4LReVbeMo4XMbS9/Aponkhoj?page-id=0%3A1&node-id=1-20&p=f&viewport=108%2C271%2C0.03&t=Qgc9gsl5Q46A2xWO-1&scaling=contain&content-scaling=fixed&starting-point-node-id=1%3A2 ]
 
 ---
 
