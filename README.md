@@ -1,6 +1,6 @@
-# Full-Stack Project Starter Template
+# AponKhoj
 
-This is a **full-stack starter template** for students to build their projects.  
+This is the **AponKhoj** full-stack project.  
 It has a structured folder setup with separate **client**, **server**, and **database** directories, making it easy to organize your application logic and development workflow.
 
 ---

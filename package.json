@@ -1,5 +1,5 @@
 {
-  "name": "attendance_tracker",
+  "name": "aponkhoj",
   "version": "1.0.0",
   "description": "",
   "scripts": {
@@ -10,6 +10,6 @@
     "build:prod": "npm run build:client && npm run copy:client"
   },
   "keywords": [],
-  "author": "Ali Ahnaf",
+  "author": "HUJAEADI",
   "license": "ISC"
 }
