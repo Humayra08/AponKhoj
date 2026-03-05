@@ -45,6 +45,11 @@ const LoginPage = () => {
                                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                             </button>
                         </div>
+                        <div className="text-right mt-2">
+                            <Link to="/forgot-password" className="text-sm text-primary hover:underline">
+                                পাসওয়ার্ড ভুলে গেছেন?
+                            </Link>
+                        </div>
                     </div>
 
                     <button type="submit" className="w-full bg-primary hover:bg-primary-dark text-white py-2.5 rounded-lg font-medium transition-colors">
