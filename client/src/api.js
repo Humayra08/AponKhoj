@@ -1,12 +1,10 @@
-import axios, { AxiosInstance } from 'axios';
+import axios from 'axios';
 import { secrets } from './secrets';
 import toast from 'react-hot-toast';
 
 // AponKhoj API Client
 // Add your API methods here
 class ApiClient {
-  private client: AxiosInstance;
-
   constructor() {
     this.client = axios.create({
       baseURL: secrets.backendEndpoint,
@@ -27,7 +25,7 @@ class ApiClient {
   // }
 
   // Handle common errors
-  handleError(error: any) {
+  handleError(error) {
     if (error.response) {
       console.error(`API Error: ${error.response.status} - ${error.response.data.message}`);
     } else if (error.request) {
