@@ -5,14 +5,14 @@ const DIVISIONS = ['ঢাকা', 'চট্টগ্রাম', 'রাজশ�
 
 const STEPS = [
     { icon: Search, label: 'রিপোর্ট করুন', desc: 'নিখোঁজ বা উদ্ধার হওয়া ব্যক্তির তথ্য জমা দিন', color: 'bg-secondary/10 text-secondary' },
-    { icon: Zap, label: 'AI মিলিয়ে দেয়', desc: 'উন্নত AI ফেস রিকগনিশন দিয়ে তথ্য মেলানো হয়', color: 'bg-accent-teal/10 text-accent-teal' },
+    { icon: Zap, label: 'AI-চালিত স্মার্ট সনাক্তকরণ', desc: 'AI ফেস রিকগনিশন মাধ্যমে তথ্য বিশ্লেষণ করে সম্ভাব্য মিল খুঁজে বের করা হয়।', color: 'bg-accent-teal/10 text-accent-teal' },
     { icon: Heart, label: 'পুনর্মিলন', desc: 'পরিবার ও প্রিয়জন একত্রিত হন', color: 'bg-primary/10 text-primary' },
 ];
 
 const avatar = (seed, gender, type = 'missing') => {
     if (!seed) return `https://api.dicebear.com/7.x/shapes/png?seed=unknown&size=200&backgroundColor=f3f4f6`;
     const style = gender === 'female' ? 'lorelei' : 'adventurer';
-    const bg = type === 'missing' ? 'ffe4e6' : 'd4ede9'; // red tint for missing, teal for found
+    const bg = type === 'missing' ? 'ffe4e6' : 'd4ede9'; 
     return `https://api.dicebear.com/7.x/${style}/png?seed=${encodeURIComponent(seed)}&size=300&backgroundColor=${bg}`;
 };
 
@@ -62,8 +62,8 @@ const HomePage = () => {
             <section className="bg-white border-b border-gray-100 py-4 sm:py-6 px-4 shadow-sm">
                 <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-gray-100 gap-4 sm:gap-0">
                     {[
-                        { icon: Search, value: '১,২০০+', label: 'রিপোর্ট জমা', color: 'text-secondary' },
-                        { icon: CheckCircle, value: '৮৫০+', label: 'সফল পুনর্মিলন', color: 'text-accent-teal' },
+                        { icon: Search, value: '০', label: 'রিপোর্ট জমা', color: 'text-secondary' },
+                        { icon: CheckCircle, value: '০', label: 'সফল পুনর্মিলন', color: 'text-accent-teal' },
                         { icon: MapPin, value: '৬৪', label: 'জেলা কভারেজ', color: 'text-primary' },
                     ].map(s => (
                         <div key={s.label} className="flex flex-row sm:flex-col lg:flex-row items-center justify-center sm:justify-center lg:justify-center gap-3 py-2 sm:py-0 px-4 text-center sm:text-left">
