@@ -1,40 +1,21 @@
-:root {
-  font-family: 'Josefin Sans', serif;
-  line-height: 1.5;
-  font-weight: 400;
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@300;400;500;600;700;800;900&display=swap');
+
+@theme {
+  --color-background: #FDFBF7;
+  --color-primary-light: #2E6652;
+  --color-primary: #1B4332;
+  --color-primary-dark: #0C2219;
+  --color-secondary-light: #FF7D42;
+  --color-secondary: #E8530A;
+  --color-secondary-dark: #B03A00;
+  --color-accent-teal: #0D6E6E;
+  --color-accent-red: #C62828;
+  --font-family-sans: "Noto Sans Bengali", sans-serif;
 }
+
 body {
-  font-family: 'Josefin Sans', serif;
-}
-
-.layout {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-}
-
-header {
-  padding: 1em;
-}
-
-main {
-  flex: 1;
-  padding: 1em;
-}
-footer {
-  padding: 1em;
-  text-align: center;
-}
-
-@media (min-width: 576px) {
-  .w-lg-400 {
-    width: 400px;
-  }
-}
-
-@media (min-width: 576px) {
-  .navbar-mx {
-    padding-left: 300px;
-    padding-right: 300px;
-  }
+  background-color: #FDFBF7;
+  color: #1f2937;
+  font-family: 'Noto Sans Bengali', sans-serif;
 }
