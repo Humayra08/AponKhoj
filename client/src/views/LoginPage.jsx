@@ -1,0 +1,64 @@
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Phone, Lock, Eye, EyeOff, Search } from 'lucide-react';
+
+const LoginPage = () => {
+    const [showPassword, setShowPassword] = useState(false);
+
+    return (
+        <div className="min-h-screen bg-background flex items-center justify-center py-12 px-4">
+            <div className="bg-white rounded-2xl shadow-md w-full max-w-md p-8">
+                <div className="text-center mb-8">
+                    <div className="flex items-center justify-center gap-2 mb-4">
+                        <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center shadow-sm">
+                            <Search size={16} className="text-white" />
+                        </div>
+                        <span className="font-bold text-lg text-primary tracking-tight">আপনখোঁজ</span>
+                    </div>
+                    <h1 className="text-2xl font-bold text-gray-800">লগইন করুন</h1>
+                    <p className="text-gray-500 text-sm mt-1">আপনার অ্যাকাউন্টে প্রবেশ করুন</p>
+                </div>
+
+                <form className="space-y-5">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">ফোন নম্বর</label>
+                        <div className="relative">
+                            <Phone size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                            <input
+                                type="tel"
+                                placeholder="01XXXXXXXXX"
+                                className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                            />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">পাসওয়ার্ড</label>
+                        <div className="relative">
+                            <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                            <input
+                                type={showPassword ? 'text' : 'password'}
+                                placeholder="••••••••"
+                                className="w-full pl-10 pr-10 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                            />
+                            <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+                                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                            </button>
+                        </div>
+                    </div>
+
+                    <button type="submit" className="w-full bg-primary hover:bg-primary-dark text-white py-2.5 rounded-lg font-medium transition-colors">
+                        লগইন করুন
+                    </button>
+                </form>
+
+                <p className="text-center text-sm text-gray-500 mt-6">
+                    অ্যাকাউন্ট নেই?{' '}
+                    <Link to="/register" className="text-primary font-medium hover:underline">রেজিস্ট্রেশন করুন</Link>
+                </p>
+            </div>
+        </div>
+    );
+};
+
+export default LoginPage;
