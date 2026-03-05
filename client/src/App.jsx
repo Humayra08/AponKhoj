@@ -2,6 +2,7 @@ import { Route, Routes } from 'react-router';
 import Navbar from './Components/Navbar';
 import Footer from './Components/Footer';
 import HomePage from './views/HomePage';
+import LoginPage from './views/LoginPage';
 import './index.css';
 import { Toaster } from 'react-hot-toast';
 
@@ -13,6 +14,7 @@ function App() {
       <main className="flex-grow">
         <Routes>
           <Route path="/" element={<HomePage />} />
+          <Route path="/login" element={<LoginPage />} />
           {/* Add your routes here */}
         </Routes>
       </main>
