@@ -1,6 +1,7 @@
 import { Route, Routes } from 'react-router';
 import Navbar from './Components/Navbar';
 import Footer from './Components/Footer';
+import HomePage from './views/HomePage';
 import './index.css';
 import { Toaster } from 'react-hot-toast';
 
@@ -11,7 +12,7 @@ function App() {
       <Navbar />
       <main className="flex-grow">
         <Routes>
-          <Route path={'/'} element={<div></div>} />
+          <Route path="/" element={<HomePage />} />
           {/* Add your routes here */}
         </Routes>
       </main>
