@@ -5,6 +5,7 @@ import ScrollToTop from './Components/ScrollToTop';
 import HomePage from './views/HomePage';
 import LoginPage from './views/LoginPage';
 import RegistrationPage from './views/RegistrationPage';
+import ForgotPasswordPage from './views/ForgotPassword';
 import './index.css';
 import { Toaster } from 'react-hot-toast';
 
@@ -19,6 +20,7 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegistrationPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           {/* Add your routes here */}
         </Routes>
       </main>
