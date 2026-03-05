@@ -1,6 +1,7 @@
 import { Route, Routes } from 'react-router';
 import Navbar from './Components/Navbar';
 import Footer from './Components/Footer';
+import ScrollToTop from './Components/ScrollToTop';
 import HomePage from './views/HomePage';
 import LoginPage from './views/LoginPage';
 import RegistrationPage from './views/RegistrationPage';
@@ -11,6 +12,7 @@ import { Toaster } from 'react-hot-toast';
 function App() {
   return (
     <div className="flex flex-col min-h-screen">
+      <ScrollToTop />
       <Navbar />
       <main className="flex-grow">
         <Routes>
