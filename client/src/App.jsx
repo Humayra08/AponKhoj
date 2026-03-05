@@ -3,6 +3,7 @@ import Navbar from './Components/Navbar';
 import Footer from './Components/Footer';
 import HomePage from './views/HomePage';
 import LoginPage from './views/LoginPage';
+import RegistrationPage from './views/RegistrationPage';
 import './index.css';
 import { Toaster } from 'react-hot-toast';
 
@@ -15,6 +16,7 @@ function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegistrationPage />} />
           {/* Add your routes here */}
         </Routes>
       </main>
