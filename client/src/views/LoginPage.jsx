@@ -25,12 +25,14 @@ const LoginPage = () => {
                 email,
                 phone: '',
                 location: '',
+                role: loginType,   // 'user' or 'admin'
                 joinDate: new Date().toLocaleDateString('bn-BD'),
             },
             'mock-token-' + Date.now()
         );
         setLoading(false);
-        navigate('/dashboard');
+        // role-based redirect
+        navigate(loginType === 'admin' ? '/admin/dashboard' : '/dashboard');
     };
 
     return (
