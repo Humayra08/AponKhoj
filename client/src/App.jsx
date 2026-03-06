@@ -14,6 +14,7 @@ import HelpPage from './views/HelpPage';
 import FoundListPage from './views/FoundListPage';
 import AboutPage from './views/AboutPage';
 import SuccessStoriesPage from './views/SuccessStoriesPage';
+import ReportMissingPage from './views/ReportMissingPage';
 import './index.css';
 import { Toaster } from 'react-hot-toast';
 import ReportFoundPage from './views/ReportFoundPage';
@@ -40,6 +41,20 @@ function App() {
             <Route path="/found" element={<FoundListPage />} />
             <Route path="/about" element={<AboutPage />} />
             <Route path="/success-stories" element={<SuccessStoriesPage />} />
+            <Route path="/report-missing" element={<ReportMissingPage />} />
+          {/* Add more routes here */}
+        </Routes>
+      </main>
+      <Footer />
+      <Toaster
+        position="top-center"
+        toastOptions={{
+          error: {
+            duration: 5000,
+          },
+        }}
+      />
+    </div>
             <Route path="/profile" element={<UserProfilePage />} />
             {/* Add more routes here */}
           </Routes>
