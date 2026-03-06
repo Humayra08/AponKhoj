@@ -26,9 +26,11 @@ RUN apt-get update && apt-get install -y \
     libonig-dev \
     libxml2-dev \
     zip \
-    unzip \
-    nodejs \
-    npm
+    unzip
+
+# Install Node.js 20.x
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y nodejs
 
 # Enable mod_rewrite
 RUN a2enmod rewrite
@@ -68,29 +70,30 @@ RUN echo "APP_NAME=${APP_NAME}" >> .env && \
     echo "APP_ENV=${APP_ENV}" >> .env && \
     echo "APP_KEY=${APP_KEY}" >> .env && \
     echo "APP_DEBUG=${APP_DEBUG}" >> .env && \
+    echo "APP_URL=${APP_URL}" >> .env && \
     echo "FRONTEND_URL=${FRONTEND_URL}" >> .env && \
     echo "LOG_LEVEL=${LOG_LEVEL}" >> .env && \
     echo "DB_CONNECTION=${DB_CONNECTION}" >> .env && \
     echo "DB_HOST=${DB_HOST}" >> .env && \
+    echo "DB_PORT=${DB_PORT}" >> .env && \
     echo "DB_DATABASE=${DB_DATABASE}" >> .env && \
-    echo "DB_DATABASE=${DB_USERNAME}" >> .env && \
-    echo "DB_DATABASE=${DB_PASSWORD}" >> .env && \
-    echo "DB_PORT=${DB_PORT}" >> .env
+    echo "DB_USERNAME=${DB_USERNAME}" >> .env && \
+    echo "DB_PASSWORD=${DB_PASSWORD}" >> .env
 
 # Set permissions for Laravel storage and cache
 RUN chown -R www-data:www-data /var/www/html && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
-# RUN ls -a
-# RUN echo "hello wrld"
+# Create client .env file with backend endpoint
+RUN echo "VITE_BACKEND_ENDPOINT=${APP_URL}" > client/.env
 
+# Install client dependencies and build
 RUN cd client && npm install && npm run build
 
 # # Move React build to Laravel public directory
 RUN cp -r client/dist/* public/
 
-# # Expose port 80 for Apache
+# Expose port 80 for Apache
 EXPOSE 80
 
-# FROM php:8.2-apache
-# # Start Apache server
-# CMD ["apache2-foreground"]
+# Start Apache server
+CMD ["apache2-foreground"]
