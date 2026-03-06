@@ -34,6 +34,7 @@ function App() {
           <Route path="/found" element={<FoundListPage />} />
           <Route path="/search-page" element={<SearchPage />} />
           <Route path="/report-found" element={<ReportFoundPage />} />
+
           {/* Add more routes here */}
         </Routes>
       </main>
