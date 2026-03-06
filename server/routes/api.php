@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Auth\AuthController;
 
 /*
 |--------------------------------------------------------------------------
@@ -14,9 +15,25 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
-    return $request->user();
+// Public Authentication Routes
+Route::group(['prefix' => 'auth'], function () {
+    Route::post('login', [AuthController::class, 'login']);
+    Route::post('register', [AuthController::class, 'register']);
+    
+    // Protected Authentication Routes
+    Route::middleware('auth:api')->group(function () {
+        Route::post('logout', [AuthController::class, 'logout']);
+        Route::post('refresh', [AuthController::class, 'refresh']);
+        Route::get('me', [AuthController::class, 'me']);
+    });
 });
 
-// AponKhoj API Routes
-// Add your API routes here
+// Protected API Routes (Require Authentication)
+Route::middleware('auth:api')->group(function () {
+    Route::get('user', function (Request $request) {
+        return $request->user();
+    });
+    
+    // AponKhoj API Routes
+    // Add your protected API routes here
+});
