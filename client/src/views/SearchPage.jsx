@@ -253,6 +253,98 @@ export default function SearchPage() {
                         ))}
                     </div>
 
+                    {/* Title + Sort */}
+                    <div className="flex items-start justify-between gap-4 mb-4">
+                        <div>
+                            <h1 className="text-xl font-black text-gray-800">দ্রুত আঞ্চলিক অনুসন্ধান</h1>
+                            <p className="text-xs text-gray-400 mt-0.5">{filtered.length}টি ফলাফল পাওয়া গেছে</p>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                            <span className="text-xs text-gray-400 whitespace-nowrap">সর্ট করুন:</span>
+                            <select
+                                value={sortBy} onChange={e => setSortBy(e.target.value)}
+                                className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none bg-white text-gray-700">
+                                {SORT_OPTIONS.map(o => <option key={o}>{o}</option>)}
+                            </select>
+                        </div>
+                    </div>
+
+                    {/* Local Reports */}
+                    {localReports.length > 0 && (
+                        <div className="mb-6">
+                            <div className="flex items-center gap-2 mb-3">
+                                <div className="w-1 h-5 bg-secondary rounded-full" />
+                                <h2 className="text-sm font-bold text-gray-700">আপনার জেলার রিপোর্ট (ঢাকা)</h2>
+                            </div>
+                            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                                {localReports.map(r => <Card key={r.id} r={r} />)}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Other Reports */}
+                    {otherReports.length > 0 && (
+                        <div className="mb-6">
+                            <div className="flex items-center gap-2 mb-3">
+                                <div className="w-1 h-5 bg-primary rounded-full" />
+                                <h2 className="text-sm font-bold text-gray-700">
+                                    {localReports.length > 0 ? 'অন্যান্য এলাকা' : 'সকল রিপোর্ট'}
+                                </h2>
+                            </div>
+                            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                                {otherReports.map(r => <Card key={r.id} r={r} />)}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Empty state */}
+                    {filtered.length === 0 && (
+                        <div className="text-center py-20">
+                            <div className="text-4xl mb-3">🔍</div>
+                            <p className="text-gray-500 font-medium">কোনো ফলাফল পাওয়া যায়নি</p>
+                            <button onClick={clearAll} className="mt-3 text-sm text-primary hover:underline">ফিল্টার সাফ করুন</button>
+                        </div>
+                    )}
+
+                    {/* ── Pagination ── */}
+                    {totalPages > 1 && (
+                        <div className="flex items-center justify-center gap-1 mt-8">
+                            <button
+                                onClick={() => {
+                                    setPage(p => Math.max(1, p - 1));
+                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                                }}
+                                disabled={page === 1}
+                                className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:border-primary hover:text-primary disabled:opacity-30 transition-colors">
+                                <ChevronLeft size={14} />
+                            </button>
+
+                            {Array.from({ length: totalPages }, (_, i) => i + 1).map(n => {
+                                const show = n === 1 || n === totalPages || Math.abs(n - page) <= 1;
+                                const isDot = !show && (n === 2 && page > 4) || (!show && n === totalPages - 1 && page < totalPages - 3);
+                                if (!show && !isDot) return null;
+                                if (isDot) return <span key={n} className="w-8 text-center text-gray-400 text-sm">…</span>;
+                                return (
+                                    <button key={n} onClick={() => {
+                                        setPage(n);
+                                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                                    }}
+                                        className={`w-8 h-8 rounded-lg text-sm font-medium transition-all ${page === n ? 'bg-primary text-white shadow-sm' : 'border border-gray-200 text-gray-600 hover:border-primary hover:text-primary'}`}>
+                                        {n}
+                                    </button>
+                                );
+                            })}
+
+                            <button
+                                onClick={() => {
+                                    setPage(p => Math.min(totalPages, p + 1));
+                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                                }}
+                                disabled={page === totalPages}
+                                className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:border-primary hover:text-primary disabled:opacity-30 transition-colors">
+                                <ChevronRight size={14} />
+                            </button>
+                        </div>
                     )}
                 </main>
             </div>
