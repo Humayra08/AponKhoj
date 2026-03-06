@@ -30,8 +30,10 @@ function App() {
           <Route path="/help" element={<HelpPage />} /> 
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/dashboard" element={<UserDashboardPage />} />
-           <Route path="/verify-email" element={<RegistrationVerificationPage />} />
-           <Route path="/found" element={<FoundListPage />} />
+          <Route path="/verify-email" element={<RegistrationVerificationPage />} />
+          <Route path="/found" element={<FoundListPage />} />
+          <Route path="/search-page" element={<SearchPage />} />
+          <Route path="/report-found" element={<ReportFoundPage />} />
           {/* Add more routes here */}
         </Routes>
       </main>
