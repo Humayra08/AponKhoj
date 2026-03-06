@@ -23,3 +23,16 @@ CREATE TABLE IF NOT EXISTS `password_resets` (
     INDEX `password_resets_email_index` (`email`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Email Verification Codes Table
+CREATE TABLE IF NOT EXISTS `verification_codes` (
+    `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `email` VARCHAR(255) NOT NULL,
+    `code` VARCHAR(6) NOT NULL,
+    `expires_at` TIMESTAMP NOT NULL,
+    `verified` TINYINT(1) DEFAULT 0,
+    `created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX `verification_codes_email_index` (`email`),
+    INDEX `verification_codes_code_index` (`code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+

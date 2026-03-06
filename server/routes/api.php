@@ -19,6 +19,8 @@ use App\Http\Controllers\Auth\AuthController;
 Route::group(['prefix' => 'auth'], function () {
     Route::post('login', [AuthController::class, 'login']);
     Route::post('register', [AuthController::class, 'register']);
+    Route::post('verify-email', [AuthController::class, 'verifyEmail']);
+    Route::post('resend-code', [AuthController::class, 'resendCode']);
     
     // Protected Authentication Routes
     Route::middleware('auth:api')->group(function () {

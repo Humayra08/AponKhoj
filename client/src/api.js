@@ -95,6 +95,37 @@ class ApiClient {
     }
   }
 
+  /**
+   * Verify email with OTP code
+   * @param {string} email
+   * @param {string} code - 4-digit verification code
+   * @returns {Promise<{message: string, user: Object, authorization: {token: string, type: string}}>}
+   */
+  async verifyEmail(email, code) {
+    try {
+      const response = await this.client.post('/auth/verify-email', { email, code });
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Resend verification code
+   * @param {string} email
+   * @returns {Promise<{message: string}>}
+   */
+  async resendCode(email) {
+    try {
+      const response = await this.client.post('/auth/resend-code', { email });
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
   // Handle common errors
   handleError(error) {
     if (error.response) {

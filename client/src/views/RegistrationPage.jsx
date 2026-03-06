@@ -51,11 +51,11 @@ const RegistrationPage = () => {
                 district: form.district || null
             });
             
-            // Store user and token
-            login(response.user, response.authorization.token);
+            // Registration successful, now needs email verification
+            toast.success('Registration successful! Please check your email for verification code.');
             
-            toast.success('Registration successful!');
-            navigate('/verify-email');
+            // Navigate to verification page with email
+            navigate('/verify-email', { state: { email: form.email } });
         } catch (error) {
             // Error already handled by apiClient
             console.error('Registration failed:', error);
