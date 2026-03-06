@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
-    FileText, Bell, Users, ArrowRight, Clock, CheckCircle, AlertTriangle,
-    Search, MapPin, LogOut, Settings, ChevronRight, Zap, Eye, Trash2,
-    UserCircle2, Loader2
+    FileText, Bell, Users, Clock,
+    Search, MapPin, ChevronRight, Zap, Eye, Trash2,
+    UserCircle2, AlertTriangle, Settings
 } from 'lucide-react';
+import { useAuth } from '../helpers/AuthContext';
 
 // Status Badge 
 const StatusBadge = ({ status }) => {
@@ -34,38 +35,25 @@ const Skeleton = ({ className = '' }) => (
 
 // Main Component
 export default function UserDashboardPage() {
-    const [user, setUser] = useState(null);               // null = not loaded yet
-    const [reports, setReports] = useState([]);           // user's submitted reports
+    const { user } = useAuth();                          // real user from AuthContext
+    const [reports, setReports] = useState([]);
     const [notifications, setNotifications] = useState([]);
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
 
     useEffect(() => {
-      
         const timer = setTimeout(() => {
-            setUser(null);      
-            setReports([]);      
-            setNotifications([]); 
-            setStats(null);      
+            setReports([]);
+            setNotifications([]);
+            setStats(null);
             setLoading(false);
-        }, 800);
+        }, 600);
         return () => clearTimeout(timer);
     }, []);
 
     if (loading) {
         return (
             <div className="min-h-screen bg-background">
-                {/* Loading Header */}
-                <div className="bg-white border-b border-gray-100 shadow-sm">
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-3">
-                        <Skeleton className="w-10 h-10 rounded-full" />
-                        <div className="space-y-2">
-                            <Skeleton className="w-32 h-4" />
-                            <Skeleton className="w-44 h-3" />
-                        </div>
-                    </div>
-                </div>
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-6">
                     <Skeleton className="w-48 h-7" />
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -84,37 +72,8 @@ export default function UserDashboardPage() {
             </div>
         );
     }
- return (
+    return (
         <div className="min-h-screen bg-background">
-
-            {/* ── Top Header Bar ── */}
-            <div className="bg-white border-b border-gray-100 shadow-sm">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                        {/* Avatar: use user.avatarUrl from API, fallback to initials */}
-                        {user?.avatarUrl ? (
-                            <img src={user.avatarUrl} alt={user.name} className="w-10 h-10 rounded-full object-cover border-2 border-primary/20" />
-                        ) : (
-                            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-black text-base flex-shrink-0">
-                                {user?.name ? user.name[0] : <UserCircle2 size={20} />}
-                            </div>
-                        )}
-                        <div>
-                            <p className="text-sm font-bold text-gray-800">{user?.name || '—'}</p>
-                            <p className="text-xs text-gray-400">{user?.email || '—'}</p>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <Link to="/profile" className="hidden sm:flex items-center gap-1.5 text-xs text-gray-500 hover:text-primary px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors">
-                            <Settings size={14} /> সেটিংস
-                        </Link>
-                        <Link to="/login" className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-secondary px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors">
-                            <LogOut size={14} /> লগআউট
-                        </Link>
-                    </div>
-                </div>
-            </div>
-
             <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
 
                 {/* ── Welcome ── */}
