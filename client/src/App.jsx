@@ -34,7 +34,7 @@ function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegistrationPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-            <Route path="/help" element={<HelpPage />} /> 
+            <Route path="/help" element={<HelpPage />} />
             <Route path="/terms" element={<TermsPage />} />
             <Route path="/dashboard" element={<UserDashboardPage />} />
             <Route path="/verify-email" element={<RegistrationVerificationPage />} />
@@ -42,20 +42,9 @@ function App() {
             <Route path="/about" element={<AboutPage />} />
             <Route path="/success-stories" element={<SuccessStoriesPage />} />
             <Route path="/report-missing" element={<ReportMissingPage />} />
-          {/* Add more routes here */}
-        </Routes>
-      </main>
-      <Footer />
-      <Toaster
-        position="top-center"
-        toastOptions={{
-          error: {
-            duration: 5000,
-          },
-        }}
-      />
-    </div>
             <Route path="/profile" element={<UserProfilePage />} />
+            <Route path="/report-found" element={<ReportFoundPage />} />
+            <Route path="/search" element={<SearchPage />} />
             {/* Add more routes here */}
           </Routes>
         </main>
