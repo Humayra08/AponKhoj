@@ -51,7 +51,28 @@ const ReportFoundPage = () => {
                         </div>
                     </div>
 
-                    
+                    {/* Location */}
+                    <div>
+                        <h2 className="text-base font-semibold text-gray-700 mb-3 flex items-center gap-2"><MapPin size={16} /> উদ্ধারের স্থান</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-xs text-gray-500 mb-1">তারিখ</label>
+                                <input type="date" className="w-full border border-gray-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                            </div>
+                            <div>
+                                <label className="block text-xs text-gray-500 mb-1">জেলা</label>
+                                <select className="w-full border border-gray-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white">
+                                    <option>ঢাকা</option>
+                                    <option>চট্টগ্রাম</option>
+                                    <option>রাজশাহী</option>
+                                </select>
+                            </div>
+                            <div className="md:col-span-2">
+                                <label className="block text-xs text-gray-500 mb-1">বিস্তারিত ঠিকানা</label>
+                                <input type="text" placeholder="এলাকা / থানা / স্থানের নাম" className="w-full border border-gray-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                            </div>
+                        </div>
+                    </div>
 
                     <button className="w-full bg-accent-teal hover:bg-teal-800 text-white py-3 rounded-xl font-medium transition-colors">
                         তথ্য জমা দিন ও AI ম্যাচ খুঁজুন
