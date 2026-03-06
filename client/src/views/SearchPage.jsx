@@ -29,5 +29,37 @@ const ALL_REPORTS = [
     { id: 12, name: 'শিরিন আক্তার', age: 17, gender: 'female', division: 'ময়মনসিংহ', district: 'ময়মনসিংহ সদর', clothing: 'কমলা কামিজ', status: 'found', date: '১২ দিন আগে', seed: 'shirin17' },
 ];
 
+const DIVISIONS = ['পুরো বাংলাদেশ', 'ঢাকা', 'চট্টগ্রাম', 'সিলেট', 'রাজশাহী', 'খুলনা', 'বরিশাল', 'রংপুর', 'ময়মনসিংহ'];
+const SORT_OPTIONS = ['সর্বশেষ আগে', 'সবচেয়ে পুরনো', 'বয়স (কম-বেশি)'];
+const COLORS = ['লাল', 'নীল', 'হলুদ', 'সাদা', 'কালো', 'সবুজ'];
+const PER_PAGE = 6;
+
+const StatusBadge = ({ status }) => (
+    <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${status === 'missing' ? 'bg-secondary text-white' : 'bg-accent-teal text-white'}`}>
+        {status === 'missing' ? 'নিখোঁজ' : 'পাওয়া গেছে'}
+    </span>
+);
+
+export default function SearchPage() {
+    const [activeDiv, setActiveDiv] = useState('পুরো বাংলাদেশ');
+    const [statusFilter, setStatusFilter] = useState('সব');
+    const [ageRange, setAgeRange] = useState(100);
+    const [selectedColors, setSelectedColors] = useState([]);
+    const [sortBy, setSortBy] = useState('সর্বশেষ আগে');
+    const [page, setPage] = useState(1);
+    const [nearbyOnly, setNearbyOnly] = useState(false);
+    const [sidebarOpen, setSidebarOpen] = useState(true);
+
+    const toggleColor = (c) =>
+        setSelectedColors(prev => prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c]);
+
+    const clearAll = () => {
+        setActiveDiv('পুরো বাংলাদেশ');
+        setStatusFilter('সব');
+        setAgeRange(100);
+        setSelectedColors([]);
+        setNearbyOnly(false);
+        setPage(1);
+    };
 
 }
