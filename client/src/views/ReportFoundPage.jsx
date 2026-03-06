@@ -74,6 +74,27 @@ const ReportFoundPage = () => {
                         </div>
                     </div>
 
+                    {/* Description */}
+                    <div>
+                        <h2 className="text-base font-semibold text-gray-700 mb-3 flex items-center gap-2"><FileText size={16} /> বিবরণ</h2>
+                        <textarea rows={3} placeholder="উদ্ধারকৃত ব্যক্তি সম্পর্কে যা জানেন..." className="w-full border border-gray-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none" />
+                    </div>
+
+                    {/* Contact */}
+                    <div>
+                        <h2 className="text-base font-semibold text-gray-700 mb-3">যোগাযোগের তথ্য</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-xs text-gray-500 mb-1">প্রতিষ্ঠানের নাম</label>
+                                <input type="text" className="w-full border border-gray-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                            </div>
+                            <div>
+                                <label className="block text-xs text-gray-500 mb-1">ফোন নম্বর</label>
+                                <input type="tel" placeholder="01XXXXXXXXX" className="w-full border border-gray-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                            </div>
+                        </div>
+                    </div>
+
                     <button className="w-full bg-accent-teal hover:bg-teal-800 text-white py-3 rounded-xl font-medium transition-colors">
                         তথ্য জমা দিন ও AI ম্যাচ খুঁজুন
                     </button>
