@@ -35,6 +35,24 @@ const ReportFoundPage = () => {
                         </label>
                     </div>
 
+                    {/* Health Status */}
+                    <div>
+                        <h2 className="text-base font-semibold text-gray-700 mb-3">স্বাস্থ্য অবস্থা</h2>
+                        <div className="flex gap-3">
+                            {['healthy', 'sick', 'unknown'].map(s => (
+                                <button
+                                    key={s}
+                                    onClick={() => setStatus(s)}
+                                    className={`flex-1 py-2 rounded-lg border text-sm font-medium transition-colors ${status === s ? 'border-accent-teal bg-accent-teal/10 text-accent-teal' : 'border-gray-200 text-gray-500'}`}
+                                >
+                                    {s === 'healthy' ? 'সুস্থ' : s === 'sick' ? 'অসুস্থ' : 'অজানা'}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    
+
                     <button className="w-full bg-accent-teal hover:bg-teal-800 text-white py-3 rounded-xl font-medium transition-colors">
                         তথ্য জমা দিন ও AI ম্যাচ খুঁজুন
                     </button>
