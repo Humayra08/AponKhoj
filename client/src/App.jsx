@@ -11,6 +11,7 @@ import RegistrationVerificationPage from './views/RegistrationVerificationPage';
 import TermsPage from './views/TermsPage';
 import HelpPage from './views/HelpPage';
 import FoundListPage from './views/FoundListPage';
+import AboutPage from './views/AboutPage';
 import './index.css';
 import { Toaster } from 'react-hot-toast';
 import ReportFoundPage from './views/ReportFoundPage';
@@ -32,6 +33,7 @@ function App() {
           <Route path="/dashboard" element={<UserDashboardPage />} />
            <Route path="/verify-email" element={<RegistrationVerificationPage />} />
            <Route path="/found" element={<FoundListPage />} />
+            <Route path="/about" element={<AboutPage />} />
           {/* Add more routes here */}
         </Routes>
       </main>
