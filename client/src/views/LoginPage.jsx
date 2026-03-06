@@ -56,7 +56,6 @@ const LoginPage = () => {
                     </button>
                 </div>
 
-                <form className="space-y-5">
                 <form onSubmit={handleLogin} className="space-y-5">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">ইমেইল</label>
