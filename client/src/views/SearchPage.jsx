@@ -62,4 +62,22 @@ export default function SearchPage() {
         setPage(1);
     };
 
+    // Filter logic
+    const filtered = ALL_REPORTS.filter(r => {
+        if (activeDiv !== 'পুরো বাংলাদেশ' && r.division !== activeDiv) return false;
+        if (statusFilter === 'নিখোঁজ' && r.status !== 'missing') return false;
+        if (statusFilter === 'পাওয়া গেছে' && r.status !== 'found') return false;
+        if (r.age > ageRange) return false;
+        return true;
+    });
+
+    const totalPages = Math.ceil(filtered.length / PER_PAGE);
+    const paginated = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+
+    // Group into local vs other
+    const localReports = paginated.filter(r => r.division === 'ঢাকা');
+    const otherReports = paginated.filter(r => r.division !== 'ঢাকা');
+
+    
+    );
 }
