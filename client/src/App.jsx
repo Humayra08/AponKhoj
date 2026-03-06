@@ -9,40 +9,42 @@ import UserDashboardPage from './views/UserDashboardPage';
 import ForgotPasswordPage from './views/ForgotPassword';
 import RegistrationVerificationPage from './views/RegistrationVerificationPage';
 import TermsPage from './views/TermsPage';
-import HelpPage from './views/HelpPage';
+import UserProfilePage from './views/UserProfilePage';
+import { AuthProvider } from './helpers/AuthContext';
 import './index.css';
 import { Toaster } from 'react-hot-toast';
-import ReportFoundPage from './views/ReportFoundPage';
 
 // AponKhoj App
 function App() {
   return (
-    <div className="flex flex-col min-h-screen">
-      <ScrollToTop />
-      <Navbar />
-      <main className="flex-grow">
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegistrationPage />} />
-          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="/help" element={<HelpPage />} /> 
-          <Route path="/terms" element={<TermsPage />} />
-          <Route path="/dashboard" element={<UserDashboardPage />} />
-           <Route path="/verify-email" element={<RegistrationVerificationPage />} />
-          {/* Add more routes here */}
-        </Routes>
-      </main>
-      <Footer />
-      <Toaster
-        position="top-center"
-        toastOptions={{
-          error: {
-            duration: 5000,
-          },
-        }}
-      />
-    </div>
+    <AuthProvider>
+      <div className="flex flex-col min-h-screen">
+        <ScrollToTop />
+        <Navbar />
+        <main className="flex-grow">
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegistrationPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/terms" element={<TermsPage />} />
+            <Route path="/dashboard" element={<UserDashboardPage />} />
+            <Route path="/verify-email" element={<RegistrationVerificationPage />} />
+            <Route path="/profile" element={<UserProfilePage />} />
+            {/* Add more routes here */}
+          </Routes>
+        </main>
+        <Footer />
+        <Toaster
+          position="top-center"
+          toastOptions={{
+            error: {
+              duration: 5000,
+            },
+          }}
+        />
+      </div>
+    </AuthProvider>
   );
 }
 
