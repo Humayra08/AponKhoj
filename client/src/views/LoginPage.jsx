@@ -1,18 +1,35 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, Eye, EyeOff, Search } from 'lucide-react';
-
-
-
-   
+import { Mail, Lock, Eye, EyeOff, Search, Loader2 } from 'lucide-react';
+import { useAuth } from '../helpers/AuthContext';
 
 const LoginPage = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [loginType, setLoginType] = useState('user'); // 'user' or 'admin'
-     const navigate = useNavigate();
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [loading, setLoading] = useState(false);
+    const navigate = useNavigate();
+    const { login } = useAuth();
 
-    const handleLogin = (e) => {
+    const handleLogin = async (e) => {
         e.preventDefault();
+        setLoading(true);
+        // ── TODO: replace this mock with a real API call ──
+        // const res = await apiClient.login({ email, password });
+        // login(res.user, res.token);
+        await new Promise(r => setTimeout(r, 800)); // simulate network
+        login(
+            {
+                name: email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+                email,
+                phone: '',
+                location: '',
+                joinDate: new Date().toLocaleDateString('bn-BD'),
+            },
+            'mock-token-' + Date.now()
+        );
+        setLoading(false);
         navigate('/dashboard');
     };
 
@@ -35,22 +52,20 @@ const LoginPage = () => {
                     <button
                         type="button"
                         onClick={() => setLoginType('user')}
-                        className={`flex-1 py-2.5 px-4 rounded-md font-medium text-sm transition-all cursor-pointer ${
-                            loginType === 'user'
-                                ? 'bg-white text-gray-800 shadow-sm'
-                                : 'bg-transparent text-gray-600 hover:text-gray-800'
-                        }`}
+                        className={`flex-1 py-2.5 px-4 rounded-md font-medium text-sm transition-all cursor-pointer ${loginType === 'user'
+                            ? 'bg-white text-gray-800 shadow-sm'
+                            : 'bg-transparent text-gray-600 hover:text-gray-800'
+                            }`}
                     >
                         সাধারণ ব্যবহারকারী
                     </button>
                     <button
                         type="button"
                         onClick={() => setLoginType('admin')}
-                        className={`flex-1 py-2.5 px-4 rounded-md font-medium text-sm transition-all cursor-pointer ${
-                            loginType === 'admin'
-                                ? 'bg-white text-gray-800 shadow-sm'
-                                : 'bg-transparent text-gray-600 hover:text-gray-800'
-                        }`}
+                        className={`flex-1 py-2.5 px-4 rounded-md font-medium text-sm transition-all cursor-pointer ${loginType === 'admin'
+                            ? 'bg-white text-gray-800 shadow-sm'
+                            : 'bg-transparent text-gray-600 hover:text-gray-800'
+                            }`}
                     >
                         অ্যাডমিন
                     </button>
@@ -64,6 +79,9 @@ const LoginPage = () => {
                             <input
                                 type="email"
                                 placeholder="example@email.com"
+                                value={email}
+                                onChange={e => setEmail(e.target.value)}
+                                required
                                 className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                             />
                         </div>
@@ -76,6 +94,9 @@ const LoginPage = () => {
                             <input
                                 type={showPassword ? 'text' : 'password'}
                                 placeholder="••••••••"
+                                value={password}
+                                onChange={e => setPassword(e.target.value)}
+                                required
                                 className="w-full pl-10 pr-10 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                             />
                             <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
@@ -89,8 +110,9 @@ const LoginPage = () => {
                         </div>
                     </div>
 
-                    <button type="submit" className="w-full bg-primary hover:bg-primary-dark text-white py-2.5 rounded-lg font-medium transition-colors">
-                        লগইন করুন
+                    <button type="submit" disabled={loading}
+                        className="w-full bg-primary hover:bg-primary-dark text-white py-2.5 rounded-lg font-medium transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
+                        {loading ? <><Loader2 size={16} className="animate-spin" /> লগইন হচ্ছে...</> : 'লগইন করুন'}
                     </button>
                 </form>
 
