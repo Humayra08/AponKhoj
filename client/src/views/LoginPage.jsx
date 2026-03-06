@@ -1,9 +1,19 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, Search } from 'lucide-react';
+
+
+
+   
 
 const LoginPage = () => {
     const [showPassword, setShowPassword] = useState(false);
+     const navigate = useNavigate();
+
+    const handleLogin = (e) => {
+        e.preventDefault();
+        navigate('/dashboard');
+    };
 
     return (
         <div className="min-h-screen bg-background flex items-center justify-center py-12 px-4">
@@ -19,7 +29,7 @@ const LoginPage = () => {
                     <p className="text-gray-500 text-sm mt-1">আপনার অ্যাকাউন্টে প্রবেশ করুন</p>
                 </div>
 
-                <form className="space-y-5">
+                <form onSubmit={handleLogin} className="space-y-5">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">ইমেইল</label>
                         <div className="relative">
