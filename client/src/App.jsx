@@ -9,6 +9,7 @@ import ForgotPasswordPage from './views/ForgotPassword';
 import './index.css';
 import { Toaster } from 'react-hot-toast';
 import ReportFoundPage from './views/ReportFoundPage';
+import SearchPage from './views/SearchPage';
 
 // AponKhoj App
 function App() {
@@ -23,6 +24,7 @@ function App() {
           <Route path="/register" element={<RegistrationPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/report-found" element={<ReportFoundPage />} />
+          <Route path="/search-page" element={<SearchPage />} />
           {/* Add your routes here */}
         </Routes>
       </main>
