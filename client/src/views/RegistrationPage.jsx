@@ -1,15 +1,33 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { User, Mail, Phone, MapPin, Lock, Eye, EyeOff, Search } from 'lucide-react';
-
+import { User, Mail, Phone, MapPin, Lock, Eye, EyeOff, Search, Loader2 } from 'lucide-react';
+import { useAuth } from '../helpers/AuthContext';
 
 
 const RegistrationPage = () => {
     const [showPassword, setShowPassword] = useState(false);
-     const navigate = useNavigate();
+    const [loading, setLoading] = useState(false);
+    const [form, setForm] = useState({ name: '', email: '', phone: '', location: '', password: '' });
+    const navigate = useNavigate();
+    const { login } = useAuth();
 
-    const handleRegister = (e) => {
+    const handleChange = e => setForm(p => ({ ...p, [e.target.name]: e.target.value }));
+
+    const handleRegister = async (e) => {
         e.preventDefault();
+        setLoading(true);
+        // ── TODO: replace with real API call ──
+        // const res = await apiClient.register(form);
+        // login(res.user, res.token); navigate('/verify-email');
+        await new Promise(r => setTimeout(r, 900));
+        login(
+            {
+                name: form.name, email: form.email, phone: form.phone, location: form.location,
+                joinDate: new Date().toLocaleDateString('bn-BD')
+            },
+            'mock-token-' + Date.now()
+        );
+        setLoading(false);
         navigate('/verify-email');
     };
 
@@ -29,13 +47,15 @@ const RegistrationPage = () => {
                     <p className="text-gray-500 text-sm mt-1">নতুন অ্যাকাউন্ট তৈরি করুন</p>
                 </div>
 
-                 <form onSubmit={handleRegister} className="space-y-4">
+                <form onSubmit={handleRegister} className="space-y-4">
                     {/* পূর্ণ নাম — always shown */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">পূর্ণ নাম</label>
                         <div className="relative">
                             <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                            <input type="text" placeholder="আপনার পূর্ণ নাম লিখুন" className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary" />
+                            <input type="text" name="name" value={form.name} onChange={handleChange}
+                                placeholder="আপনার পূর্ণ নাম" required
+                                className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary" />
                         </div>
                     </div>
 
@@ -43,7 +63,9 @@ const RegistrationPage = () => {
                         <label className="block text-sm font-medium text-gray-700 mb-1">ইমেইল</label>
                         <div className="relative">
                             <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                            <input type="email" placeholder="example@email.com" className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary" />
+                            <input type="email" name="email" value={form.email} onChange={handleChange}
+                                placeholder="example@email.com" required
+                                className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary" />
                         </div>
                     </div>
 
@@ -51,7 +73,9 @@ const RegistrationPage = () => {
                         <label className="block text-sm font-medium text-gray-700 mb-1">ফোন নম্বর</label>
                         <div className="relative">
                             <Phone size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                            <input type="tel" placeholder="01XXXXXXXXX" className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary" />
+                            <input type="tel" name="phone" value={form.phone} onChange={handleChange}
+                                placeholder="01XXXXXXXXX"
+                                className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary" />
                         </div>
                     </div>
 
@@ -59,7 +83,8 @@ const RegistrationPage = () => {
                         <label className="block text-sm font-medium text-gray-700 mb-1">জেলা</label>
                         <div className="relative">
                             <MapPin size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                            <select className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none bg-white">
+                            <select name="location" value={form.location} onChange={handleChange}
+                                className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none bg-white">
                                 <option value="">জেলা নির্বাচন করুন</option>
                                 {districts.map(d => <option key={d}>{d}</option>)}
                             </select>
@@ -72,7 +97,8 @@ const RegistrationPage = () => {
                             <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                             <input
                                 type={showPassword ? 'text' : 'password'}
-                                placeholder="••••••••"
+                                name="password" value={form.password} onChange={handleChange}
+                                placeholder="••••••••" required
                                 className="w-full pl-10 pr-10 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                             />
                             <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
@@ -81,8 +107,10 @@ const RegistrationPage = () => {
                         </div>
                     </div>
 
-                    <button type="submit" className="w-full bg-primary hover:bg-primary-dark text-white py-2.5 rounded-lg font-medium transition-colors mt-2">
-                        রেজিস্ট্রেশন করুন
+                    <button type="submit" disabled={loading}
+                        className="w-full bg-primary hover:bg-primary-dark text-white py-2.5 rounded-lg font-medium
+                                   transition-colors mt-2 disabled:opacity-60 flex items-center justify-center gap-2">
+                        {loading ? <><Loader2 size={16} className="animate-spin" /> রেজিস্ট্রেশন হচ্ছে...</> : 'রেজিস্ট্রেশন করুন'}
                     </button>
                 </form>
 
