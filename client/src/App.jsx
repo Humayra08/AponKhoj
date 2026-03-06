@@ -7,6 +7,7 @@ import LoginPage from './views/LoginPage';
 import RegistrationPage from './views/RegistrationPage';
 import UserDashboardPage from './views/UserDashboardPage';
 import ForgotPasswordPage from './views/ForgotPassword';
+import RegistrationVerificationPage from './views/RegistrationVerificationPage';
 import TermsPage from './views/TermsPage'; 
 import './index.css';
 import { Toaster } from 'react-hot-toast';
@@ -26,6 +27,7 @@ function App() {
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/dashboard" element={<UserDashboardPage />} />
 
+           <Route path="/verify-email" element={<RegistrationVerificationPage />} />
           {/* Add more routes here */}
         </Routes>
       </main>
