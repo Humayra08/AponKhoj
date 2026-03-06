@@ -5,7 +5,6 @@ import ScrollToTop from './Components/ScrollToTop';
 import HomePage from './views/HomePage';
 import LoginPage from './views/LoginPage';
 import RegistrationPage from './views/RegistrationPage';
-import UserDashboardPage from './views/UserDashboardPage';
 import ForgotPasswordPage from './views/ForgotPassword';
 import RegistrationVerificationPage from './views/RegistrationVerificationPage';
 import TermsPage from './views/TermsPage';
@@ -14,6 +13,7 @@ import FoundListPage from './views/FoundListPage';
 import './index.css';
 import { Toaster } from 'react-hot-toast';
 import ReportFoundPage from './views/ReportFoundPage';
+import SearchPage from './views/SearchPage';
 
 // AponKhoj App
 function App() {
