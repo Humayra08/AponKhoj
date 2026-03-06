@@ -11,6 +11,7 @@ import RegistrationVerificationPage from './views/RegistrationVerificationPage';
 import TermsPage from './views/TermsPage'; 
 import './index.css';
 import { Toaster } from 'react-hot-toast';
+import ReportFoundPage from './views/ReportFoundPage';
 
 // AponKhoj App
 function App() {
