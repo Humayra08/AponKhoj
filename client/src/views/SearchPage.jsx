@@ -168,6 +168,81 @@ export default function SearchPage() {
                                 </div>
 
                                 {/* Nearby Toggle */}
-                                
+                                <div className="bg-white rounded-xl border border-gray-100 p-3 shadow-sm">
+                                    <div className="flex items-start gap-2 mb-1">
+                                        <div className="w-4 h-4 rounded-full bg-secondary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                            <div className="w-2 h-2 rounded-full bg-secondary" />
+                                        </div>
+                                        <p className="text-xs font-bold text-gray-700">কাছাকাছি এলাকা</p>
+                                    </div>
+                                    <p className="text-[10px] text-gray-400 mb-2 leading-relaxed">আপনার অবস্থানের কাছাকাছি রিপোর্ট দেখুন</p>
+                                    <button
+                                        onClick={() => setNearbyOnly(!nearbyOnly)}
+                                        className={`relative w-10 h-5 rounded-full transition-colors ${nearbyOnly ? 'bg-secondary' : 'bg-gray-200'}`}
+                                    >
+                                        <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${nearbyOnly ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                                    </button>
+                                </div>
+
+                                {/* Status Filter */}
+                                <div>
+                                    <p className="text-xs font-bold text-gray-600 mb-2">বর্তমান অবস্থা</p>
+                                    <div className="grid grid-cols-3 gap-1 bg-gray-100 p-1 rounded-xl">
+                                        {['সব', 'নিখোঁজ', 'পাওয়া গেছে'].map(s => (
+                                            <button key={s}
+                                                onClick={() => { setStatusFilter(s); setPage(1); }}
+                                                className={`text-[10px] py-1.5 rounded-lg font-medium transition-all ${statusFilter === s ? 'bg-white shadow text-primary' : 'text-gray-500'}`}>
+                                                {s}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Division Dropdown */}
+                                <div>
+                                    <p className="text-xs font-bold text-gray-600 mb-2">বিভাগ/জেলা</p>
+                                    <select
+                                        value={activeDiv}
+                                        onChange={e => { setActiveDiv(e.target.value); setPage(1); }}
+                                        className="w-full border border-gray-200 rounded-xl p-2 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white"
+                                    >
+                                        {DIVISIONS.map(d => <option key={d}>{d}</option>)}
+                                    </select>
+                                </div>
+
+                                {/* Age Range Slider */}
+                                <div>
+                                    <p className="text-xs font-bold text-gray-600 mb-1">বয়সসীমা</p>
+                                    <div className="flex justify-between text-[10px] text-gray-400 mb-2">
+                                        <span>০ বছর</span><span>{ageRange} বছর</span>
+                                    </div>
+                                    <input
+                                        type="range" min="0" max="100" value={ageRange}
+                                        onChange={e => { setAgeRange(+e.target.value); setPage(1); }}
+                                        className="w-full h-1.5 bg-gray-200 rounded-full appearance-none cursor-pointer accent-secondary"
+                                    />
+                                </div>
+
+                                {/* Clothing Color */}
+                                <div>
+                                    <p className="text-xs font-bold text-gray-600 mb-2">পোশাকের রঙ</p>
+                                    <div className="flex flex-wrap gap-1">
+                                        {COLORS.map(c => (
+                                            <button key={c} onClick={() => toggleColor(c)}
+                                                className={`text-[10px] px-2 py-1 rounded-full border transition-all ${selectedColors.includes(c) ? 'bg-primary text-white border-primary' : 'border-gray-200 text-gray-600 hover:border-primary hover:text-primary'}`}>
+                                                {c}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </aside>
+
+                
+                </main>
+            </div>
+        </div>
     );
 }
