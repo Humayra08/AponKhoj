@@ -1,9 +1,20 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, Search } from 'lucide-react';
+
+
+
+   
 
 const LoginPage = () => {
     const [showPassword, setShowPassword] = useState(false);
+    const [loginType, setLoginType] = useState('user'); // 'user' or 'admin'
+     const navigate = useNavigate();
+
+    const handleLogin = (e) => {
+        e.preventDefault();
+        navigate('/dashboard');
+    };
 
     return (
         <div className="min-h-screen bg-background flex items-center justify-center py-12 px-4">
@@ -19,7 +30,33 @@ const LoginPage = () => {
                     <p className="text-gray-500 text-sm mt-1">আপনার অ্যাকাউন্টে প্রবেশ করুন</p>
                 </div>
 
-                <form className="space-y-5">
+                {/* Switch Bar for User/Admin */}
+                <div className="flex gap-2 mb-6 bg-gray-100 p-1 rounded-lg">
+                    <button
+                        type="button"
+                        onClick={() => setLoginType('user')}
+                        className={`flex-1 py-2.5 px-4 rounded-md font-medium text-sm transition-all cursor-pointer ${
+                            loginType === 'user'
+                                ? 'bg-white text-gray-800 shadow-sm'
+                                : 'bg-transparent text-gray-600 hover:text-gray-800'
+                        }`}
+                    >
+                        সাধারণ ব্যবহারকারী
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setLoginType('admin')}
+                        className={`flex-1 py-2.5 px-4 rounded-md font-medium text-sm transition-all cursor-pointer ${
+                            loginType === 'admin'
+                                ? 'bg-white text-gray-800 shadow-sm'
+                                : 'bg-transparent text-gray-600 hover:text-gray-800'
+                        }`}
+                    >
+                        অ্যাডমিন
+                    </button>
+                </div>
+
+                <form onSubmit={handleLogin} className="space-y-5">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">ইমেইল</label>
                         <div className="relative">
