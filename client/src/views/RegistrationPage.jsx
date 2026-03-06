@@ -1,9 +1,17 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { User, Mail, Phone, MapPin, Lock, Eye, EyeOff, Search } from 'lucide-react';
+
+
 
 const RegistrationPage = () => {
     const [showPassword, setShowPassword] = useState(false);
+     const navigate = useNavigate();
+
+    const handleRegister = (e) => {
+        e.preventDefault();
+        navigate('/verify-email');
+    };
 
     const districts = ['ঢাকা', 'চট্টগ্রাম', 'রাজশাহী', 'খুলনা', 'বরিশাল', 'সিলেট', 'রংপুর', 'ময়মনসিংহ'];
 
@@ -21,7 +29,7 @@ const RegistrationPage = () => {
                     <p className="text-gray-500 text-sm mt-1">নতুন অ্যাকাউন্ট তৈরি করুন</p>
                 </div>
 
-                <form className="space-y-4">
+                 <form onSubmit={handleRegister} className="space-y-4">
                     {/* পূর্ণ নাম — always shown */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">পূর্ণ নাম</label>
