@@ -240,7 +240,20 @@ export default function SearchPage() {
                     </div>
                 </aside>
 
-                
+                {/* ── Main Content ── */}
+                <main className="flex-1 min-w-0">
+                    {/* Division Pills */}
+                    <div className="flex items-center gap-2 mb-5 overflow-x-auto pb-1 scrollbar-hide">
+                        {DIVISIONS.map(d => (
+                            <button key={d}
+                                onClick={() => { setActiveDiv(d); setPage(1); }}
+                                className={`flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-all border ${activeDiv === d ? 'bg-secondary text-white border-secondary shadow-sm' : 'bg-white text-gray-600 border-gray-200 hover:border-secondary hover:text-secondary'}`}>
+                                {d}
+                            </button>
+                        ))}
+                    </div>
+
+                    )}
                 </main>
             </div>
         </div>
