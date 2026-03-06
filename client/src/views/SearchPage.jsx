@@ -120,6 +120,54 @@ export default function SearchPage() {
         </div>
     );
 
-    
+    return (
+        <div className="bg-background min-h-screen">
+            <div className="max-w-7xl mx-auto px-4 py-6 flex gap-6">
+
+                {/* ── Left Sidebar Filter ── */}
+                <aside
+                    className={`flex-shrink-0 transition-all duration-300 ease-in-out overflow-hidden ${sidebarOpen ? 'w-52' : 'w-10'
+                        }`}
+                >
+                    <div className="relative">
+                        {/* ── Toggle Button (always visible) ── */}
+                        <button
+                            onClick={() => setSidebarOpen(o => !o)}
+                            title={sidebarOpen ? 'ফিল্টার লুকান' : 'ফিল্টার দেখুন'}
+                            className={`flex items-center justify-center w-8 h-8 rounded-lg bg-white border border-gray-200 shadow-sm text-primary hover:bg-primary hover:text-white transition-all mb-3 ${sidebarOpen ? 'ml-auto mr-0' : 'mx-auto'
+                                }`}
+                        >
+                            {sidebarOpen
+                                ? <PanelLeftClose size={15} />
+                                : <PanelLeftOpen size={15} />}
+                        </button>
+
+                        {/* ── Collapsed mini strip (icon hints) ── */}
+                        {!sidebarOpen && (
+                            <div className="flex flex-col items-center gap-3 pt-1">
+                                <button onClick={() => setSidebarOpen(true)} title="ফিল্টার" className="text-gray-400 hover:text-primary transition-colors">
+                                    <SlidersHorizontal size={16} />
+                                </button>
+                                <button onClick={() => setSidebarOpen(true)} title="অবস্থা" className="text-gray-400 hover:text-primary transition-colors">
+                                    <span className="block w-4 h-4 rounded-full border-2 border-current" />
+                                </button>
+                                <button onClick={() => setSidebarOpen(true)} title="বয়স" className="text-[10px] font-bold text-gray-400 hover:text-primary transition-colors">বয়স</button>
+                            </div>
+                        )}
+
+                        {/* ── Expanded full filter panel ── */}
+                        {sidebarOpen && (
+                            <div className="space-y-5 w-52">
+                                {/* Header */}
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-1.5 font-black text-gray-800">
+                                        <SlidersHorizontal size={16} className="text-primary" />
+                                        ফিল্টার
+                                    </div>
+                                    <button onClick={clearAll} className="text-xs text-secondary hover:underline">সব মুছুন</button>
+                                </div>
+
+                                {/* Nearby Toggle */}
+                                
     );
 }
