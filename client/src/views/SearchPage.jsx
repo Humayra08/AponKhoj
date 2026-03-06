@@ -78,6 +78,48 @@ export default function SearchPage() {
     const localReports = paginated.filter(r => r.division === 'ঢাকা');
     const otherReports = paginated.filter(r => r.division !== 'ঢাকা');
 
+    const Card = ({ r }) => (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow group">
+            {/* Image */}
+            <div className="relative bg-[#f5ede2] h-52 overflow-hidden flex items-center justify-center">
+                <img
+                    src={avatar(r.seed, r.gender, r.age)}
+                    alt={r.name}
+                    className="h-full w-full object-cover object-top group-hover:scale-105 transition-transform duration-300"
+                    onError={e => { e.target.src = `https://api.dicebear.com/7.x/shapes/png?seed=${r.id}&size=300&backgroundColor=e8ddd4`; }}
+                />
+                <div className="absolute top-2 left-2">
+                    <StatusBadge status={r.status} />
+                </div>
+                <div className="absolute top-2 right-2 bg-white/80 backdrop-blur-sm text-xs text-gray-500 px-2 py-0.5 rounded-full">
+                    {r.date}
+                </div>
+            </div>
+
+            {/* Info */}
+            <div className="p-4">
+                <div className="flex items-baseline gap-2 mb-2">
+                    <h3 className="font-black text-gray-800 text-base">{r.name}</h3>
+                    <span className="text-xs text-gray-400">~{r.age} বছর</span>
+                </div>
+                <div className="space-y-1.5 text-xs text-gray-500 mb-3">
+                    <div className="flex items-center gap-1.5">
+                        <MapPin size={12} className="text-secondary flex-shrink-0" />
+                        <span>{r.district}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                        <Shirt size={12} className="text-primary flex-shrink-0" />
+                        <span>{r.clothing}</span>
+                    </div>
+                </div>
+                <Link to={`/emergency/${r.id}`}
+                    className="flex items-center justify-center gap-1.5 w-full border border-primary text-primary text-xs py-2 rounded-xl hover:bg-primary hover:text-white transition-colors font-medium">
+                    বিস্তারিত দেখুন <ArrowRight size={12} />
+                </Link>
+            </div>
+        </div>
+    );
+
     
     );
 }
