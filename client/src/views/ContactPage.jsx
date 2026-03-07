@@ -40,9 +40,18 @@ const ContactPage = () => {
                             </div>
                         </div>
 
+                        {/* Emergency Box */}
+                        <div className="bg-accent-red/5 border border-accent-red/20 rounded-2xl p-5">
+                            <h3 className="font-bold text-accent-red flex items-center gap-2 mb-2">
+                                <Phone size={16} /> জরুরি পরিস্থিতিতে
+                            </h3>
+                            <p className="text-sm text-gray-600 mb-3">নিখোঁজ হওয়ার ৪৮ ঘণ্টার মধ্যে পুলিশকে জানান।</p>
+                            <a href="tel:999" className="text-3xl font-black text-accent-red">999</a>
+                        </div>
+                    </div>
+
+                    
                         
-                            </>
-                        )}
                     </div>
                 </div>
             </div>
