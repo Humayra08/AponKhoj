@@ -50,8 +50,58 @@ const ContactPage = () => {
                         </div>
                     </div>
 
-                    
-                        
+                    {/* Contact Form */}
+                    <div className="bg-white rounded-2xl shadow-sm p-8 border border-gray-100">
+                        {submitted ? (
+                            <div className="h-full flex flex-col items-center justify-center text-center py-10">
+                                <div className="w-16 h-16 bg-accent-teal/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <CheckCircle size={32} className="text-accent-teal" />
+                                </div>
+                                <h2 className="text-xl font-black text-gray-800 mb-2">বার্তা পাঠানো হয়েছে!</h2>
+                                <p className="text-gray-500 text-sm">আমরা শীঘ্রই আপনার সাথে যোগাযোগ করব।</p>
+                                <button onClick={() => setSubmitted(false)} className="mt-6 text-sm text-primary hover:underline">আবার পাঠান</button>
+                            </div>
+                        ) : (
+                            <>
+                                <h2 className="text-2xl font-black text-gray-800 mb-6">বার্তা পাঠান</h2>
+                                <div className="space-y-4">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-xs text-gray-500 mb-1">আপনার নাম</label>
+                                            <input type="text" placeholder="পূর্ণ নাম" className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs text-gray-500 mb-1">ফোন নম্বর</label>
+                                            <input type="tel" placeholder="01XXXXXXXXX" className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-gray-500 mb-1">ইমেইল</label>
+                                        <input type="email" placeholder="email@example.com" className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-gray-500 mb-1">বিষয়</label>
+                                        <select className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white">
+                                            <option>বিষয় নির্বাচন করুন</option>
+                                            <option>নিখোঁজ রিপোর্ট সহায়তা</option>
+                                            <option>প্রযুক্তিগত সমস্যা</option>
+                                            <option>অংশীদারিত্ব</option>
+                                            <option>সাধারণ জিজ্ঞাসা</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-gray-500 mb-1">বার্তা</label>
+                                        <textarea rows={4} placeholder="আপনার বার্তা লিখুন..." className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none" />
+                                    </div>
+                                    <button
+                                        onClick={() => setSubmitted(true)}
+                                        className="w-full bg-primary hover:bg-primary-dark text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors"
+                                    >
+                                        <Send size={16} /> বার্তা পাঠান
+                                    </button>
+                                </div>
+                            </>
+                        )}
                     </div>
                 </div>
             </div>
