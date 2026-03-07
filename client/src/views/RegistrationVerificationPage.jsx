@@ -58,17 +58,19 @@ export default function RegistrationVerificationPage() {
         
         try {
             const response = await apiClient.verifyEmail(email, verificationCode);
+            console.log('Verification successful:', response);
             
             // Store user and token
             login(response.user, response.authorization.token);
             
             toast.success('Email verified successfully!');
             setStep(2);
-            
+            console.log('Verification successful:', response);
             setTimeout(() => {
                 navigate('/dashboard');
             }, 2000);
         } catch (error) {
+            console.error('Verification failed:', error);
             // Reset code inputs
             setCode(['', '', '', '']);
             inputRefs[0].current?.focus();

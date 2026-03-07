@@ -2,12 +2,15 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { User, Mail, Phone, MapPin, Lock, Eye, EyeOff, Search, Loader2 } from 'lucide-react';
 import { useAuth } from '../helpers/AuthContext';
+import apiClient from '../api';
+import toast from 'react-hot-toast';
 
 
 const RegistrationPage = () => {
     const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [form, setForm] = useState({ name: '', email: '', phone: '', location: '', password: '' });
+    const [form, setForm] = useState({ name: '', email: '', phone: '', location: '', password: '', password_confirmation: '' });
     const navigate = useNavigate();
     const { login } = useAuth();
 
@@ -15,20 +18,38 @@ const RegistrationPage = () => {
 
     const handleRegister = async (e) => {
         e.preventDefault();
+        
+        // Validate password match
+        if (form.password !== form.password_confirmation) {
+            toast.error('পাসওয়ার্ড এবং নিশ্চিত পাসওয়ার্ড মিলছে না');
+            return;
+        }
+        
         setLoading(true);
-        // ── TODO: replace with real API call ──
-        // const res = await apiClient.register(form);
-        // login(res.user, res.token); navigate('/verify-email');
-        await new Promise(r => setTimeout(r, 900));
-        login(
-            {
-                name: form.name, email: form.email, phone: form.phone, location: form.location,
-                joinDate: new Date().toLocaleDateString('bn-BD')
-            },
-            'mock-token-' + Date.now()
-        );
-        setLoading(false);
-        navigate('/verify-email');
+        
+        try {
+            // Prepare data for API (map location to district)
+            const registrationData = {
+                name: form.name,
+                email: form.email,
+                password: form.password,
+                password_confirmation: form.password_confirmation,
+                phone: form.phone || null,
+                district: form.location || null
+            };
+            
+            const response = await apiClient.register(registrationData);
+            
+            toast.success(response.message || 'রেজিস্ট্রেশন সফল হয়েছে!');
+            
+            // Navigate to verification page with email
+            navigate('/verify-email', { state: { email: form.email } });
+        } catch (error) {
+            console.error('Registration failed:', error);
+            // Error already handled by apiClient
+        } finally {
+            setLoading(false);
+        }
     };
 
     const districts = ['ঢাকা', 'চট্টগ্রাম', 'রাজশাহী', 'খুলনা', 'বরিশাল', 'সিলেট', 'রংপুর', 'ময়মনসিংহ'];
@@ -98,11 +119,27 @@ const RegistrationPage = () => {
                             <input
                                 type={showPassword ? 'text' : 'password'}
                                 name="password" value={form.password} onChange={handleChange}
-                                placeholder="••••••••" required
+                                placeholder="••••••••" required minLength="8"
                                 className="w-full pl-10 pr-10 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                             />
                             <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
                                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                            </button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">পাসওয়ার্ড নিশ্চিত করুন</label>
+                        <div className="relative">
+                            <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                            <input
+                                type={showConfirmPassword ? 'text' : 'password'}
+                                name="password_confirmation" value={form.password_confirmation} onChange={handleChange}
+                                placeholder="••••••••" required minLength="8"
+                                className="w-full pl-10 pr-10 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                            />
+                            <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+                                {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                             </button>
                         </div>
                     </div>
