@@ -45,6 +45,9 @@ function AppShell() {
           <Route path="/dashboard" element={<UserDashboardPage />} />
           <Route path="/verify-email" element={<RegistrationVerificationPage />} />
           <Route path="/found" element={<FoundListPage />} />
+          <Route path="/search-page" element={<SearchPage />} />
+          <Route path="/report-found" element={<ReportFoundPage />} />
+
           <Route path="/about" element={<AboutPage />} />
           <Route path="/success-stories" element={<SuccessStoriesPage />} />
           <Route path="/report-missing" element={<ReportMissingPage />} />
