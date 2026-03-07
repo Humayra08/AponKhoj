@@ -124,7 +124,41 @@ export default function LegalAidPage() {
                     </div>
                 </div>
 
-                
+                {/* Law References */}
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+                    <div className="flex items-center gap-2 mb-4">
+                        <BookOpen size={16} className="text-primary" />
+                        <h2 className="font-black text-gray-800">প্রাসঙ্গিক আইন ও বিধিমালা</h2>
+                    </div>
+                    <ul className="space-y-2">
+                        {[
+                            'শিশু অধিকার সংরক্ষণ আইন, ২০১৩',
+                            'নারী ও শিশু নির্যাতন দমন আইন, ২০০০ (সংশোধিত ২০০৩)',
+                            'মানব পাচার প্রতিরোধ ও দমন আইন, ২০১২',
+                            'জাতীয় আইনি সহায়তা প্রদান সংস্থা আইন, ২০০০',
+                            'ফৌজদারি কার্যবিধি (CrPC) — ধারা ১৫৪ (FIR) ও ধারা ১৫৫ (GD)',
+                        ].map((law, i) => (
+                            <li key={i} className="flex items-start gap-3 text-sm text-gray-600 leading-relaxed">
+                                <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0 mt-2" />
+                                {law}
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+
+                {/* CTA */}
+                <div className="bg-primary rounded-2xl p-6 text-white">
+                    <h2 className="font-black text-lg mb-2">আরও সহায়তা দরকার?</h2>
+                    <p className="text-white/70 text-sm mb-4">আমাদের সহায়তা দল আপনাকে সঠিক পদক্ষেপ নিতে সাহায্য করবে।</p>
+                    <div className="flex flex-wrap gap-3">
+                        <Link to="/contact" className="flex items-center gap-2 bg-secondary text-white px-5 py-2 rounded-xl text-sm font-bold hover:opacity-90 transition-opacity">
+                            <Mail size={14} /> যোগাযোগ করুন
+                        </Link>
+                        <Link to="/help" className="flex items-center gap-2 bg-white/10 border border-white/20 text-white px-5 py-2 rounded-xl text-sm font-bold hover:bg-white/20 transition-colors">
+                            সহায়তা কেন্দ্র →
+                        </Link>
+                    </div>
+                </div>
             </div>
         </div>
     );
