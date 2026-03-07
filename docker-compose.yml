@@ -49,7 +49,7 @@ services:
         MAIL_HOST: smtp.sendgrid.net
         MAIL_PORT: 587
         MAIL_USERNAME: apikey
-        MAIL_PASSWORD: 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
+        MAIL_PASSWORD: 
         MAIL_ENCRYPTION: tls
         MAIL_FROM_ADDRESS: musketeerst687175@gmail.com
         MAIL_FROM_NAME: AponKhoj
