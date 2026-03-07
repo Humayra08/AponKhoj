@@ -24,6 +24,7 @@ import { Toaster } from 'react-hot-toast';
 import ReportFoundPage from './views/ReportFoundPage';
 import SearchPage from './views/SearchPage';
 import UserDashboardPage from './views/UserDashboardPage';
+import LegalAidPage from './views/LegalAidPage';
 
 function AppShell() {
   const { pathname } = useLocation();
@@ -54,6 +55,7 @@ function AppShell() {
           <Route path="/profile" element={<UserProfilePage />} />
           <Route path="/report-found" element={<ReportFoundPage />} />
           <Route path="/search" element={<SearchPage />} />
+          <Route path="/legal-aid" element={<LegalAidPage />} />
           {/* Add more routes here */}
 
           {/* Admin-only routes */}
