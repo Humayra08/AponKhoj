@@ -21,7 +21,7 @@ const ContactPage = () => {
                             <div className="space-y-4">
                                 {[
                                     { icon: Phone, label: 'জরুরি সহায়তা', value: '999 (পুলিশ)', sub: '১৬১২৩ (জাতীয় হেল্পলাইন)', color: 'text-accent-red bg-accent-red/10' },
-                                    { icon: Phone, label: 'আপনখোঁজ হেল্পলাইন', value: '01712-345678', sub: 'সকাল ৮টা — রাত ১০টা', color: 'text-primary bg-primary/10' },
+                                    { icon: Phone, label: 'আপনখোঁজ হেল্পলাইন', value: '01842-685725', sub: 'সকাল ৮টা — রাত ১০টা', color: 'text-primary bg-primary/10' },
                                     { icon: Mail, label: 'ইমেইল', value: 'support@aponkhoj.com.bd', sub: 'সাধারণত ২৪ ঘণ্টার মধ্যে উত্তর', color: 'text-secondary bg-secondary/10' },
                                     { icon: MapPin, label: 'ঠিকানা', value: 'বাড়ি ১২, রোড ৫, ধানমন্ডি', sub: 'ঢাকা — ১২০৫, বাংলাদেশ', color: 'text-accent-teal bg-accent-teal/10' },
                                     { icon: Clock, label: 'অফিস সময়', value: 'রবি — বৃহস্পতিবার', sub: 'সকাল ৯টা — বিকাল ৬টা', color: 'text-gray-600 bg-gray-100' },

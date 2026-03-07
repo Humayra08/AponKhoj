@@ -171,10 +171,10 @@ export default function UserDashboardPage() {
                             )}
 
                             <div className="px-5 py-3 border-t border-gray-50 flex gap-3">
-                                <Link to="/report/missing" className="flex-1 text-center text-xs font-bold py-2 rounded-xl bg-secondary/5 text-secondary hover:bg-secondary/10 transition-colors">
+                                <Link to="/report-missing" className="flex-1 text-center text-xs font-bold py-2 rounded-xl bg-secondary/5 text-secondary hover:bg-secondary/10 transition-colors">
                                     + নিখোঁজ রিপোর্ট
                                 </Link>
-                                <Link to="/report/found" className="flex-1 text-center text-xs font-bold py-2 rounded-xl bg-teal-50 text-teal-600 hover:bg-teal-100 transition-colors">
+                                <Link to="/report-found" className="flex-1 text-center text-xs font-bold py-2 rounded-xl bg-teal-50 text-teal-600 hover:bg-teal-100 transition-colors">
                                     + উদ্ধার তথ্য
                                 </Link>
                             </div>

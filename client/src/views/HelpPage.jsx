@@ -42,12 +42,17 @@ const FAQS = [
 ];
 
 const GUIDES = [
-    { icon: FileText, title: 'নিখোঁজ রিপোর্ট গাইড', desc: 'সঠিকভাবে রিপোর্ট জমা দেওয়ার ধাপগুলো', link: '/report/missing', color: 'text-secondary bg-secondary/10' },
+    { icon: FileText, title: 'নিখোঁজ রিপোর্ট গাইড', desc: 'সঠিকভাবে রিপোর্ট জমা দেওয়ার ধাপগুলো', link: '/report-missing', color: 'text-secondary bg-secondary/10' },
     { icon: Search, title: 'অনুসন্ধান গাইড', desc: 'দ্রুত ও কার্যকরভাবে খোঁজার কৌশল', link: '/search', color: 'text-primary bg-primary/10' },
-    { icon: Users, title: 'NGO ও প্রতিষ্ঠান নির্দেশিকা', desc: 'প্রাতিষ্ঠানিক অ্যাকাউন্ট ও উদ্ধার তথ্য যোগ', link: '/report/found', color: 'text-accent-teal bg-accent-teal/10' },
+    { icon: Users, title: 'NGO ও প্রতিষ্ঠান নির্দেশিকা', desc: 'প্রাতিষ্ঠানিক অ্যাকাউন্ট ও উদ্ধার তথ্য যোগ', link: '/report-found', color: 'text-accent-teal bg-accent-teal/10' },
     { icon: Shield, title: 'গোপনীয়তা নীতি', desc: 'আপনার তথ্য কীভাবে সুরক্ষিত রাখা হয়', link: '/privacy', color: 'text-purple-600 bg-purple-100' },
     { icon: Zap, title: 'AI ম্যাচিং ব্যাখ্যা', desc: 'ফেস রিকগনিশন প্রযুক্তির কার্যপদ্ধতি', link: '/ai-match', color: 'text-orange-500 bg-orange-100' },
     { icon: BookOpen, title: 'আইনি সহায়তা', desc: 'নিখোঁজ মামলায় পুলিশি পদক্ষেপ ও আইনি অধিকার', link: '/legal', color: 'text-gray-600 bg-gray-100' },
+const QUICK_ACTIONS = [
+    { icon: FileText, label: 'নিখোঁজ রিপোর্ট করুন', link: '/report-missing', color: 'bg-primary text-white' },
+    { icon: Users, label: 'উদ্ধার তথ্য দিন', link: '/report-found', color: 'bg-secondary text-white' },
+    { icon: Search, label: 'অনুসন্ধান করুন', link: '/search', color: 'bg-accent-teal text-white' },
+    { icon: Phone, label: 'জরুরি যোগাযোগ', link: '/contact', color: 'bg-accent-red text-white' },
 ];
 
 const FaqItem = ({ q, a }) => {
