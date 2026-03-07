@@ -63,6 +63,68 @@ export default function LegalAidPage() {
                         </p>
                     </div>
                 </div>
+
+                {/* Step-by-Step */}
+                <div>
+                    <h2 className="text-2xl font-black text-gray-800 mb-2">কী করবেন — ধাপে ধাপে</h2>
+                    <p className="text-sm text-gray-400 mb-6">নিখোঁজের পর সঠিক এবং কার্যকর পদক্ষেপ নেওয়া সময়মতো উদ্ধারের সম্ভাবনা বাড়ায়।</p>
+                    <div className="space-y-4">
+                        {STEPS.map(s => (
+                            <div key={s.n} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-start gap-4">
+                                <div className="w-10 h-10 bg-primary text-white rounded-xl flex items-center justify-center font-black text-base flex-shrink-0">
+                                    {s.n}
+                                </div>
+                                <div>
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <s.icon size={14} className="text-primary" />
+                                        <h3 className="font-bold text-gray-800 text-sm">{s.title}</h3>
+                                    </div>
+                                    <p className="text-xs text-gray-500 leading-relaxed">{s.desc}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Legal Rights */}
+                <div>
+                    <h2 className="text-2xl font-black text-gray-800 mb-2">আপনার আইনি অধিকার</h2>
+                    <p className="text-sm text-gray-400 mb-6">বাংলাদেশের প্রচলিত আইনে নিখোঁজ মামলায় পরিবারের অধিকারগুলো জানুন।</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {RIGHTS.map(r => (
+                            <div key={r.title} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+                                <div className="flex items-start gap-2">
+                                    <CheckCircle size={14} className="text-accent-teal flex-shrink-0 mt-0.5" />
+                                    <div>
+                                        <p className="font-bold text-gray-800 text-sm mb-1">{r.title}</p>
+                                        <p className="text-xs text-gray-500 leading-relaxed">{r.desc}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Hotlines */}
+                <div>
+                    <h2 className="text-2xl font-black text-gray-800 mb-2">জরুরি হেল্পলাইন</h2>
+                    <p className="text-sm text-gray-400 mb-6">সংকটে সঠিক নম্বরে কল করুন — সব সেবা ২৪/৭ পাওয়া যায়।</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {HOTLINES.map(h => (
+                            <a key={h.label} href={`tel:${h.number}`}
+                                className={`flex items-center gap-3 p-4 rounded-2xl border bg-white transition-shadow hover:shadow-md ${h.color}`}>
+                                <span className="text-2xl">{h.icon}</span>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-xs text-gray-500 mb-0.5">{h.label}</p>
+                                    <p className="font-black text-lg">{h.number}</p>
+                                </div>
+                                <Phone size={14} className="opacity-50 flex-shrink-0" />
+                            </a>
+                        ))}
+                    </div>
+                </div>
+
+                
             </div>
         </div>
     );
