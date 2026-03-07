@@ -115,7 +115,19 @@ export default function PrivacyPage() {
                     </p>
                 </div>
 
-                
+                {/* Contact */}
+                <div className="bg-primary rounded-2xl p-6 text-white">
+                    <h2 className="font-black text-lg mb-2">প্রশ্ন আছে?</h2>
+                    <p className="text-white/70 text-sm mb-4">গোপনীয়তা সংক্রান্ত যেকোনো জিজ্ঞাসায় আমাদের সাথে যোগাযোগ করুন।</p>
+                    <div className="flex flex-wrap gap-3">
+                        <Link to="/contact" className="flex items-center gap-2 bg-secondary text-white px-5 py-2 rounded-xl text-sm font-bold hover:opacity-90 transition-opacity">
+                            <Mail size={14} /> যোগাযোগ করুন
+                        </Link>
+                        <Link to="/terms" className="flex items-center gap-2 bg-white/10 border border-white/20 text-white px-5 py-2 rounded-xl text-sm font-bold hover:bg-white/20 transition-colors">
+                            শর্তাবলী পড়ুন →
+                        </Link>
+                    </div>
+                </div>
             </div>
         </div>
     );
