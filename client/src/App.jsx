@@ -26,6 +26,7 @@ import SearchPage from './views/SearchPage';
 import UserDashboardPage from './views/UserDashboardPage';
 import LegalAidPage from './views/LegalAidPage';
 import PrivacyPage from './views/PrivacyPage';
+import ContactPage from './views/ContactPage';
 
 function AppShell() {
   const { pathname } = useLocation();
@@ -58,6 +59,7 @@ function AppShell() {
           <Route path="/search" element={<SearchPage />} />
           <Route path="/legal-aid" element={<LegalAidPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/contact" element={<ContactPage />} />
           {/* Add more routes here */}
 
           {/* Admin-only routes */}
