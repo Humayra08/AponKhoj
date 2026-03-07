@@ -11,6 +11,7 @@ import TermsPage from './views/TermsPage';
 import UserProfilePage from './views/UserProfilePage';
 import AdminDashboardPage from './views/AdminDashboardPage';
 import AdminProfilePage from './views/AdminProfilePage';
+import AdminModerationPage from './views/AdminModerationPage';
 import { AuthProvider } from './helpers/AuthContext';
 import AdminRoute from './helpers/AdminRoute';
 import HelpPage from './views/HelpPage';
@@ -55,6 +56,7 @@ function AppShell() {
           {/* Admin-only routes */}
           <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboardPage /></AdminRoute>} />
           <Route path="/admin/profile" element={<AdminRoute><AdminProfilePage /></AdminRoute>} />
+          <Route path="/admin/moderation" element={<AdminRoute><AdminModerationPage /></AdminRoute>} />
         </Routes>
       </main>
       {!isAdminRoute && <Footer />}
