@@ -23,7 +23,7 @@ const Footer = () => (
                     <h3 className="font-semibold text-sm mb-3 text-white/90">গুরুত্বপূর্ণ লিংক</h3>
                     <ul className="space-y-2 text-sm text-white/70">
                         <li><Link to="/report-missing" className="hover:text-white transition-colors">নিখোঁজ রিপোর্ট করুন</Link></li>
-                        <li><Link to="/report/found" className="hover:text-white transition-colors">উদ্ধার তথ্য যোগ করুন</Link></li>
+                        <li><Link to="/report-found" className="hover:text-white transition-colors">উদ্ধার তথ্য যোগ করুন</Link></li>
                         <li><Link to="/search" className="hover:text-white transition-colors">অনুসন্ধান করুন</Link></li>
                         <li><Link to="/success-stories" className="hover:text-white transition-colors">সফলতার গল্প</Link></li>
                     </ul>
