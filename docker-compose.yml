@@ -1,0 +1,95 @@
+version: '3.8'
+
+services:
+  # MySQL Database Service
+  db:
+    image: mysql:8.0
+    container_name: aponkhoj_db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: aponkhoj
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_USER: aponkhoj_user
+      MYSQL_PASSWORD: aponkhoj_pass
+    ports:
+      - "3307:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./database/migrations:/docker-entrypoint-initdb.d
+    networks:
+      - aponkhoj_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot_password"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # PHP & Apache Application Service
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        APP_NAME: AponKhoj
+        APP_ENV: local
+        APP_KEY: base64:eM+AGwqfcTUjaPgo8HMmtizgOuzcAQl03efwCdY7c+A=
+        APP_DEBUG: "true"
+        APP_URL: http://localhost
+        FRONTEND_URL: http://localhost
+        LOG_LEVEL: debug
+        DB_CONNECTION: mysql
+        DB_HOST: db
+        DB_PORT: 3306
+        DB_DATABASE: aponkhoj
+        DB_USERNAME: aponkhoj_user
+        DB_PASSWORD: aponkhoj_pass
+        JWT_SECRET: C7GKYe4K3w9aZv8tz8byQaWc3U3GqUUndDFOj5uiM10Egy1sRsCpjODyCNWHsTnc
+        # Gmail SMTP Configuration
+        MAIL_MAILER: smtp
+        MAIL_HOST: smtp.gmail.com
+        MAIL_PORT: 587
+        MAIL_USERNAME: musketeerst687175@gmail.com
+        MAIL_PASSWORD: mxhatazyvudheesn
+        MAIL_ENCRYPTION: tls
+        MAIL_FROM_ADDRESS: musketeerst687175@gmail.com
+        MAIL_FROM_NAME: AponKhoj
+        VITE_BACKEND_ENDPOINT: http://localhost
+    container_name: aponkhoj_app
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - aponkhoj_network
+    volumes:
+      # Persist storage and logs only
+      - ./server/storage/logs:/var/www/html/storage/logs
+      - ./server/storage/app:/var/www/html/storage/app
+
+  # phpMyAdmin (Optional - for database management)
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: aponkhoj_phpmyadmin
+    restart: unless-stopped
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_USER: root
+      PMA_PASSWORD: root_password
+      UPLOAD_LIMIT: 50M
+    ports:
+      - "8080:80"
+    depends_on:
+      - db
+    networks:
+      - aponkhoj_network
+
+networks:
+  aponkhoj_network:
+    driver: bridge
+
+volumes:
+  db_data:
+    driver: local

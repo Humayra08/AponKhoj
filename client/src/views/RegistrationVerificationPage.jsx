@@ -1,17 +1,102 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Mail, CheckCircle2 } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Mail, CheckCircle2, Loader2 } from 'lucide-react';
+import apiClient from '../api';
+import { useAuth } from '../helpers/AuthContext';
+import toast from 'react-hot-toast';
 
 export default function RegistrationVerificationPage() {
     const [step, setStep] = useState(1);
+    const [loading, setLoading] = useState(false);
+    const [resending, setResending] = useState(false);
+    const [code, setCode] = useState(['', '', '', '']);
+    const inputRefs = [useRef(), useRef(), useRef(), useRef()];
     const navigate = useNavigate();
+    const location = useLocation();
+    const { login } = useAuth();
+    
+    // Get email from navigation state
+    const email = location.state?.email || '';
 
-    const handleVerify = (e) => {
+    const handleCodeChange = (index, value) => {
+        if (!/^\d*$/.test(value)) return; // Only allow digits
+        
+        const newCode = [...code];
+        newCode[index] = value;
+        setCode(newCode);
+
+        // Auto-focus next input
+        if (value && index < 3) {
+            inputRefs[index + 1].current?.focus();
+        }
+    };
+
+    const handleKeyDown = (index, e) => {
+        // Handle backspace
+        if (e.key === 'Backspace' && !code[index] && index > 0) {
+            inputRefs[index - 1].current?.focus();
+        }
+    };
+
+    const handleVerify = async (e) => {
         e.preventDefault();
-        setStep(2);
-        setTimeout(() => {
-            navigate('/dashboard');
-        }, 2000);
+        
+        const verificationCode = code.join('');
+        
+        if (verificationCode.length !== 4) {
+            toast.error('Please enter the complete 4-digit code');
+            return;
+        }
+
+        if (!email) {
+            toast.error('Email not found. Please register again.');
+            navigate('/register');
+            return;
+        }
+
+        setLoading(true);
+        
+        try {
+            const response = await apiClient.verifyEmail(email, verificationCode);
+            
+            // Store user and token
+            login(response.user, response.authorization.token);
+            
+            toast.success('Email verified successfully!');
+            setStep(2);
+            
+            setTimeout(() => {
+                navigate('/dashboard');
+            }, 2000);
+        } catch (error) {
+            // Reset code inputs
+            setCode(['', '', '', '']);
+            inputRefs[0].current?.focus();
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleResend = async () => {
+        if (!email) {
+            toast.error('Email not found. Please register again.');
+            navigate('/register');
+            return;
+        }
+
+        setResending(true);
+        
+        try {
+            await apiClient.resendCode(email);
+            toast.success('Verification code resent successfully!');
+            // Reset code inputs
+            setCode(['', '', '', '']);
+            inputRefs[0].current?.focus();
+        } catch (error) {
+            // Error already handled by apiClient
+        } finally {
+            setResending(false);
+        }
     };
 
     return (
@@ -29,25 +114,45 @@ export default function RegistrationVerificationPage() {
 
                         <form onSubmit={handleVerify} className="space-y-6">
                             <div className="flex justify-center gap-3">
-                                {[1, 2, 3, 4].map((i) => (
+                                {[0, 1, 2, 3].map((i) => (
                                     <input
                                         key={i}
+                                        ref={inputRefs[i]}
                                         type="text"
                                         maxLength={1}
+                                        value={code[i]}
+                                        onChange={(e) => handleCodeChange(i, e.target.value)}
+                                        onKeyDown={(e) => handleKeyDown(i, e)}
                                         required
-                                        className="w-12 h-14 text-center text-xl font-bold border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all bg-gray-50 bg-white"
+                                        disabled={loading}
+                                        className="w-12 h-14 text-center text-xl font-bold border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all bg-gray-50 bg-white disabled:opacity-60"
                                     />
                                 ))}
                             </div>
-                            <button type="submit" className="w-full bg-primary hover:bg-primary-dark text-white py-2.5 rounded-lg font-bold transition-all shadow-md shadow-primary/20">
-                                যাচাই করুন
+                            <button 
+                                type="submit" 
+                                disabled={loading}
+                                className="w-full bg-primary hover:bg-primary-dark text-white py-2.5 rounded-lg font-bold transition-all shadow-md shadow-primary/20 disabled:opacity-60 flex items-center justify-center gap-2"
+                            >
+                                {loading ? (
+                                    <>
+                                        <Loader2 size={16} className="animate-spin" />
+                                        যাচাই হচ্ছে...
+                                    </>
+                                ) : (
+                                    'যাচাই করুন'
+                                )}
                             </button>
                         </form>
 
                         <div className="mt-6">
                             <p className="text-sm text-gray-500 mb-3">ইমেইল পাননি?</p>
-                            <button className="text-sm font-bold text-primary hover:underline">
-                                আবার কোড পাঠান
+                            <button 
+                                onClick={handleResend}
+                                disabled={resending || loading}
+                                className="text-sm font-bold text-primary hover:underline disabled:opacity-60"
+                            >
+                                {resending ? 'পাঠানো হচ্ছে...' : 'আবার কোড পাঠান'}
                             </button>
                         </div>
                     </div>
