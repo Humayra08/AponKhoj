@@ -25,6 +25,7 @@ import ReportFoundPage from './views/ReportFoundPage';
 import SearchPage from './views/SearchPage';
 import UserDashboardPage from './views/UserDashboardPage';
 import LegalAidPage from './views/LegalAidPage';
+import PrivacyPage from './views/PrivacyPage';
 
 function AppShell() {
   const { pathname } = useLocation();
@@ -56,6 +57,7 @@ function AppShell() {
           <Route path="/report-found" element={<ReportFoundPage />} />
           <Route path="/search" element={<SearchPage />} />
           <Route path="/legal-aid" element={<LegalAidPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
           {/* Add more routes here */}
 
           {/* Admin-only routes */}
