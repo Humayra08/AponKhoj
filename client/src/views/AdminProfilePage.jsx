@@ -7,6 +7,8 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../helpers/AuthContext';
 import { AdminSidebar } from './AdminDashboardPage';
+import AdminNavbar from '../Components/AdminNavbar';
+
 
 /* ─── Reusable field ─── */
 const Field = ({ label, icon: Icon, children, hint }) => (
@@ -367,19 +369,7 @@ export default function AdminProfilePage() {
 
             {/* Main */}
             <div className="flex-1 flex flex-col overflow-hidden">
-                {/* Top bar */}
-                <div className="flex items-center justify-between px-6 py-3 bg-white border-b border-gray-100 shadow-sm">
-                    <div className="flex items-center gap-2 text-xs text-gray-400">
-                        <Shield size={13} className="text-red-500" />
-                        <span className="font-bold text-red-500">ADMIN</span>
-                        <span>/</span>
-                        <span className="text-gray-600 font-semibold">প্রোফাইল সেটিংস</span>
-                    </div>
-                    <button onClick={() => navigate('/admin/dashboard')}
-                        className="text-xs text-gray-500 hover:text-red-500 font-semibold transition-colors">
-                        ← ড্যাশবোর্ডে ফিরুন
-                    </button>
-                </div>
+                <AdminNavbar breadcrumb="প্রোফাইল সেটিংস" onMobileMenu={() => { }} />
 
                 <main className="flex-1 overflow-y-auto p-4 lg:p-6">
                     <div className="max-w-5xl mx-auto">
