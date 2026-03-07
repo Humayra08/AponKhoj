@@ -26,3 +26,44 @@ const HOTLINES = [
     { label: 'মানবাধিকার কমিশন', number: '16108', icon: '🤝', color: 'bg-gray-100 border-gray-200 text-gray-700' },
 ];
 
+export default function LegalAidPage() {
+    return (
+        <div className="bg-background min-h-screen">
+            {/* Hero */}
+            <div className="bg-primary text-white py-14 px-4 relative overflow-hidden">
+                <div className="absolute inset-0 opacity-10">
+                    <div className="absolute -top-20 -right-20 w-96 h-96 bg-secondary rounded-full" />
+                    <div className="absolute -bottom-10 -left-10 w-64 h-64 bg-accent-teal rounded-full" />
+                </div>
+                <div className="max-w-3xl mx-auto relative z-10">
+                    <div className="flex items-center gap-3 mb-3">
+                        <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                            <Scale size={20} />
+                        </div>
+                        <h1 className="text-4xl font-black">আইনি সহায়তা</h1>
+                    </div>
+                    <p className="text-white/70 text-sm leading-relaxed">
+                        নিখোঁজ মামলায় আপনার আইনি অধিকার, করণীয় পদক্ষেপ এবং কোথায় সাহায্য পাবেন —
+                        সব তথ্য এক জায়গায়।
+                    </p>
+                </div>
+            </div>
+
+            <div className="max-w-3xl mx-auto px-4 py-12 space-y-10">
+
+                {/* Emergency Notice */}
+                <div className="bg-accent-red/5 border border-accent-red/20 rounded-2xl p-4 flex items-start gap-3">
+                    <AlertTriangle size={18} className="text-accent-red flex-shrink-0 mt-0.5" />
+                    <div>
+                        <p className="font-bold text-accent-red text-sm mb-0.5">জরুরি পরিস্থিতিতে এখনই কল করুন</p>
+                        <p className="text-xs text-gray-500">
+                            নিখোঁজ হওয়ার সাথে সাথে পুলিশকে জানান —
+                            <a href="tel:999" className="font-black text-accent-red ml-1">৯৯৯</a> অথবা
+                            <a href="tel:1098" className="font-black text-accent-red ml-1">১০৯৮ (শিশু)</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
