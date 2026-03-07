@@ -24,7 +24,7 @@ const NavAvatar = ({ user }) => {
 };
 
 const Navbar = () => {
-    const { user, isAuthenticated, logout } = useAuth();
+    const { user, isAuthenticated, isAdmin, logout } = useAuth();
     const navigate = useNavigate();
     const [menuOpen, setMenuOpen] = useState(false);
     const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -56,7 +56,12 @@ const Navbar = () => {
     };
 
     /* ─── Profile Dropdown Menu Items ─── */
-    const profileMenuItems = [
+    const profileMenuItems = isAdmin ? [
+        { to: '/admin/dashboard', label: 'অ্যাডমিন প্যানেল', icon: LayoutDashboard },
+        { to: '/admin/profile', label: 'অ্যাডমিন প্রোফাইল', icon: Settings },
+        { to: '/admin/profile?tab=logs', label: 'কার্যক্রম লগ', icon: FileText },
+        { to: '/admin/profile?tab=system', label: 'সিস্টেম সেটিংস', icon: Shield },
+    ] : [
         { to: '/dashboard', label: 'ড্যাশবোর্ড', icon: LayoutDashboard },
         { to: '/profile', label: 'প্রোফাইল সেটিংস', icon: Settings },
         { to: '/profile?tab=reports', label: 'আমার রিপোর্ট', icon: FileText },
@@ -109,6 +114,12 @@ const Navbar = () => {
                                     <span className="text-sm font-semibold text-gray-700 max-w-[110px] truncate">
                                         {user?.name?.split(' ')[0] || 'আমার অ্যাকাউন্ট'}
                                     </span>
+                                    {isAdmin && (
+                                        <span className="text-[9px] font-black text-red-600 bg-red-100
+                                                         border border-red-200 px-1.5 py-0.5 rounded uppercase tracking-wide">
+                                            ADMIN
+                                        </span>
+                                    )}
                                     <ChevronDown size={14} className={`text-gray-400 transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`} />
                                 </button>
 

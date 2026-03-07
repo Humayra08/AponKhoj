@@ -2,20 +2,12 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { User, Mail, Phone, MapPin, Lock, Eye, EyeOff, Search, Loader2 } from 'lucide-react';
 import { useAuth } from '../helpers/AuthContext';
-import apiClient from '../api';
-import toast from 'react-hot-toast';
+
 
 const RegistrationPage = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [form, setForm] = useState({ 
-        name: '', 
-        email: '', 
-        phone: '', 
-        district: '', 
-        password: '',
-        password_confirmation: ''
-    });
+    const [form, setForm] = useState({ name: '', email: '', phone: '', location: '', password: '' });
     const navigate = useNavigate();
     const { login } = useAuth();
 
@@ -23,45 +15,20 @@ const RegistrationPage = () => {
 
     const handleRegister = async (e) => {
         e.preventDefault();
-        
-        if (!form.name || !form.email || !form.password) {
-            toast.error('Please fill in all required fields');
-            return;
-        }
-
-        if (form.password !== form.password_confirmation) {
-            toast.error('Passwords do not match');
-            return;
-        }
-
-        if (form.password.length < 8) {
-            toast.error('Password must be at least 8 characters');
-            return;
-        }
-
         setLoading(true);
-        
-        try {
-            const response = await apiClient.register({
-                name: form.name,
-                email: form.email,
-                password: form.password,
-                password_confirmation: form.password_confirmation,
-                phone: form.phone || null,
-                district: form.district || null
-            });
-            
-            // Registration successful, now needs email verification
-            toast.success('Registration successful! Please check your email for verification code.');
-            
-            // Navigate to verification page with email
-            navigate('/verify-email', { state: { email: form.email } });
-        } catch (error) {
-            // Error already handled by apiClient
-            console.error('Registration failed:', error);
-        } finally {
-            setLoading(false);
-        }
+        // ── TODO: replace with real API call ──
+        // const res = await apiClient.register(form);
+        // login(res.user, res.token); navigate('/verify-email');
+        await new Promise(r => setTimeout(r, 900));
+        login(
+            {
+                name: form.name, email: form.email, phone: form.phone, location: form.location,
+                joinDate: new Date().toLocaleDateString('bn-BD')
+            },
+            'mock-token-' + Date.now()
+        );
+        setLoading(false);
+        navigate('/verify-email');
     };
 
     const districts = ['ঢাকা', 'চট্টগ্রাম', 'রাজশাহী', 'খুলনা', 'বরিশাল', 'সিলেট', 'রংপুর', 'ময়মনসিংহ'];
@@ -116,7 +83,7 @@ const RegistrationPage = () => {
                         <label className="block text-sm font-medium text-gray-700 mb-1">জেলা</label>
                         <div className="relative">
                             <MapPin size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                            <select name="district" value={form.district} onChange={handleChange}
+                            <select name="location" value={form.location} onChange={handleChange}
                                 className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none bg-white">
                                 <option value="">জেলা নির্বাচন করুন</option>
                                 {districts.map(d => <option key={d}>{d}</option>)}
@@ -137,19 +104,6 @@ const RegistrationPage = () => {
                             <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
                                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                             </button>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">পাসওয়ার্ড নিশ্চিত করুন</label>
-                        <div className="relative">
-                            <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                            <input
-                                type={showPassword ? 'text' : 'password'}
-                                name="password_confirmation" value={form.password_confirmation} onChange={handleChange}
-                                placeholder="••••••••" required
-                                className="w-full pl-10 pr-10 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-                            />
                         </div>
                     </div>
 
