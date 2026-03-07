@@ -15,6 +15,17 @@ ARG DB_PORT
 ARG DB_DATABASE
 ARG DB_USERNAME
 ARG DB_PASSWORD
+ARG JWT_SECRET
+
+# Mail configuration
+ARG MAIL_MAILER=log
+ARG MAIL_HOST=smtp.mailtrap.io
+ARG MAIL_PORT=2525
+ARG MAIL_USERNAME=null
+ARG MAIL_PASSWORD=null
+ARG MAIL_ENCRYPTION=tls
+ARG MAIL_FROM_ADDRESS=noreply@aponkhoj.com
+ARG MAIL_FROM_NAME="${APP_NAME}"
 
 ARG VITE_BACKEND_ENDPOINT
 
@@ -78,7 +89,16 @@ RUN echo "APP_NAME=${APP_NAME}" >> .env && \
     echo "DB_PORT=${DB_PORT}" >> .env && \
     echo "DB_DATABASE=${DB_DATABASE}" >> .env && \
     echo "DB_USERNAME=${DB_USERNAME}" >> .env && \
-    echo "DB_PASSWORD=${DB_PASSWORD}" >> .env
+    echo "DB_PASSWORD=${DB_PASSWORD}" >> .env && \
+    echo "JWT_SECRET=${JWT_SECRET}" >> .env && \
+    echo "MAIL_MAILER=${MAIL_MAILER}" >> .env && \
+    echo "MAIL_HOST=${MAIL_HOST}" >> .env && \
+    echo "MAIL_PORT=${MAIL_PORT}" >> .env && \
+    echo "MAIL_USERNAME=${MAIL_USERNAME}" >> .env && \
+    echo "MAIL_PASSWORD=${MAIL_PASSWORD}" >> .env && \
+    echo "MAIL_ENCRYPTION=${MAIL_ENCRYPTION}" >> .env && \
+    echo "MAIL_FROM_ADDRESS=${MAIL_FROM_ADDRESS}" >> .env && \
+    echo "MAIL_FROM_NAME=\"${MAIL_FROM_NAME}\"" >> .env
 
 # Set permissions for Laravel storage and cache
 RUN chown -R www-data:www-data /var/www/html && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache

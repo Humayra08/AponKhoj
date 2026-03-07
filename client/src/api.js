@@ -129,8 +129,25 @@ class ApiClient {
   // Handle common errors
   handleError(error) {
     if (error.response) {
-      const message = error.response.data.message || error.response.data.error || 'Something went wrong';
-      console.error(`API Error: ${error.response.status}`, error.response.data);
+      const errorData = error.response.data;
+      console.error(`API Error: ${error.response.status}`, errorData);
+      
+      // Handle validation errors (422)
+      if (error.response.status === 422 && errorData) {
+        // Laravel returns validation errors as an object with field names as keys
+        const validationMessages = [];
+        for (const field in errorData) {
+          if (Array.isArray(errorData[field])) {
+            validationMessages.push(...errorData[field]);
+          }
+        }
+        if (validationMessages.length > 0) {
+          validationMessages.forEach(msg => toast.error(msg));
+          return;
+        }
+      }
+      
+      const message = errorData.message || errorData.error || 'Something went wrong';
       toast.error(message);
     } else if (error.request) {
       console.error('API Error: No response received', error.request);

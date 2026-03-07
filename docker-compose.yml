@@ -43,6 +43,16 @@ services:
         DB_DATABASE: aponkhoj
         DB_USERNAME: aponkhoj_user
         DB_PASSWORD: aponkhoj_pass
+        JWT_SECRET: C7GKYe4K3w9aZv8tz8byQaWc3U3GqUUndDFOj5uiM10Egy1sRsCpjODyCNWHsTnc
+        # Gmail SMTP Configuration
+        MAIL_MAILER: smtp
+        MAIL_HOST: smtp.gmail.com
+        MAIL_PORT: 587
+        MAIL_USERNAME: musketeerst687175@gmail.com
+        MAIL_PASSWORD: mxhatazyvudheesn
+        MAIL_ENCRYPTION: tls
+        MAIL_FROM_ADDRESS: musketeerst687175@gmail.com
+        MAIL_FROM_NAME: AponKhoj
         VITE_BACKEND_ENDPOINT: http://localhost
     container_name: aponkhoj_app
     restart: unless-stopped

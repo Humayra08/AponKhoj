@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\VerificationCode;
+use App\Models\User;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 
@@ -58,18 +59,27 @@ class VerificationService
     protected function sendVerificationEmail($email, $code)
     {
         try {
-            // For now, just log the code since mail is not configured
+            // Get user name for personalized email
+            $user = User::where('email', $email)->first();
+            $userName = $user ? $user->name : 'ব্যবহারকারী';
+            
+            // Log the code for testing purposes (in case mail fails)
             Log::info("Verification code for {$email}: {$code}");
             
-            // TODO: Uncomment and configure when mail is set up
-            /*
-            Mail::send('emails.verification', ['code' => $code], function ($message) use ($email) {
+            // Send email with verification code
+            Mail::send('emails.verification', [
+                'code' => $code,
+                'userName' => $userName
+            ], function ($message) use ($email) {
                 $message->to($email)
-                    ->subject('আপনার ইমেইল যাচাইকরণ কোড');
+                    ->subject('AponKhoj - আপনার ইমেইল যাচাইকরণ কোড');
             });
-            */
+            
+            Log::info("Verification email sent successfully to {$email}");
         } catch (\Exception $e) {
-            Log::error("Failed to send verification email: " . $e->getMessage());
+            // Log error but don't throw exception - code is still logged above
+            Log::error("Failed to send verification email to {$email}: " . $e->getMessage());
+            Log::info("The verification code {$code} is still valid for {$email} - check logs if email fails");
         }
     }
 
