@@ -14,6 +14,7 @@ import './index.css';
 import { Toaster } from 'react-hot-toast';
 import ReportFoundPage from './views/ReportFoundPage';
 import SearchPage from './views/SearchPage';
+import UserDashboardPage from './views/UserDashboardPage';
 
 // AponKhoj App
 function App() {
