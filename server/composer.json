@@ -13,6 +13,7 @@
         "laravel/tinker": "^2.5",
         "lcobucci/clock": "3.2",
         "nesbot/carbon": "^2.72",
+        "predis/predis": "^3.4",
         "tymon/jwt-auth": "^1.0@dev"
     },
     "require-dev": {

@@ -14,6 +14,7 @@ import AdminProfilePage from './views/AdminProfilePage';
 import AdminModerationPage from './views/AdminModerationPage';
 import { AuthProvider } from './helpers/AuthContext';
 import AdminRoute from './helpers/AdminRoute';
+import ProtectedRoute from './helpers/ProtectedRoute';
 import HelpPage from './views/HelpPage';
 import FoundListPage from './views/FoundListPage';
 import AboutPage from './views/AboutPage';
@@ -45,7 +46,7 @@ function AppShell() {
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/help" element={<HelpPage />} />
           <Route path="/terms" element={<TermsPage />} />
-          <Route path="/dashboard" element={<UserDashboardPage />} />
+          <Route path="/dashboard" element={<ProtectedRoute><UserDashboardPage /></ProtectedRoute>} />
           <Route path="/verify-email" element={<RegistrationVerificationPage />} />
           <Route path="/found" element={<FoundListPage />} />
           <Route path="/search-page" element={<SearchPage />} />
@@ -54,7 +55,7 @@ function AppShell() {
           <Route path="/about" element={<AboutPage />} />
           <Route path="/success-stories" element={<SuccessStoriesPage />} />
           <Route path="/report-missing" element={<ReportMissingPage />} />
-          <Route path="/profile" element={<UserProfilePage />} />
+          <Route path="/profile" element={<ProtectedRoute><UserProfilePage /></ProtectedRoute>} />
           <Route path="/report-found" element={<ReportFoundPage />} />
           <Route path="/search" element={<SearchPage />} />
           <Route path="/legal-aid" element={<LegalAidPage />} />

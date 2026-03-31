@@ -18,14 +18,19 @@ ARG DB_PASSWORD
 ARG JWT_SECRET
 
 # Mail configuration
-ARG MAIL_MAILER=smtp
-ARG MAIL_HOST=smtp.sendgrid.net
-ARG MAIL_PORT=587
-ARG MAIL_USERNAME=apikey
+ARG MAIL_MAILER=log
+ARG MAIL_HOST=smtp.mailtrap.io
+ARG MAIL_PORT=2525
+ARG MAIL_USERNAME=null
 ARG MAIL_PASSWORD=null
 ARG MAIL_ENCRYPTION=tls
-ARG MAIL_FROM_ADDRESS=musketeerst687175@gmail.com
+ARG MAIL_FROM_ADDRESS=noreply@aponkhoj.com
 ARG MAIL_FROM_NAME="${APP_NAME}"
+
+# Redis configuration
+ARG REDIS_HOST=redis
+ARG REDIS_PORT=6379
+ARG REDIS_CLIENT=predis
 
 ARG VITE_BACKEND_ENDPOINT
 
@@ -52,18 +57,16 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 # Install PHP extensions
 RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
 
-# By default, Apache serves files from /var/www/html.
-# Laravel expects the document root to point to the public directory of its project structure for proper routing and security.
-# These commands update Apache’s configuration so that it serves files from /var/www/html/public instead, aligning it with Laravel's structure.
+# Install Redis PHP extension via PECL
+RUN pecl install redis && docker-php-ext-enable redis
+
+# Set Apache document root to Laravel public directory
 ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
 RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
 
 # Get latest Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
-
-# Copy the application code to the html folder
-# COPY . /var/www/html
 
 # Copy Laravel backend code
 COPY server/ /var/www/html
@@ -72,12 +75,12 @@ COPY client/ /var/www/html/client
 # Set working directory
 WORKDIR /var/www/html
 
-# Install Laravel dependencies
-RUN composer install
+# Install Laravel dependencies (including predis)
+RUN composer require predis/predis && composer install
 
 # Set environment variables for server
-RUN touch .env
-RUN echo "APP_NAME=${APP_NAME}" >> .env && \
+RUN touch .env && \
+    echo "APP_NAME=${APP_NAME}" >> .env && \
     echo "APP_ENV=${APP_ENV}" >> .env && \
     echo "APP_KEY=${APP_KEY}" >> .env && \
     echo "APP_DEBUG=${APP_DEBUG}" >> .env && \
@@ -98,10 +101,14 @@ RUN echo "APP_NAME=${APP_NAME}" >> .env && \
     echo "MAIL_PASSWORD=${MAIL_PASSWORD}" >> .env && \
     echo "MAIL_ENCRYPTION=${MAIL_ENCRYPTION}" >> .env && \
     echo "MAIL_FROM_ADDRESS=${MAIL_FROM_ADDRESS}" >> .env && \
-    echo "MAIL_FROM_NAME=\"${MAIL_FROM_NAME}\"" >> .env
+    echo "MAIL_FROM_NAME=\"${MAIL_FROM_NAME}\"" >> .env && \
+    echo "REDIS_HOST=${REDIS_HOST}" >> .env && \
+    echo "REDIS_PORT=${REDIS_PORT}" >> .env && \
+    echo "REDIS_CLIENT=${REDIS_CLIENT}" >> .env
 
 # Set permissions for Laravel storage and cache
-RUN chown -R www-data:www-data /var/www/html && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+RUN chown -R www-data:www-data /var/www/html && \
+    chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
 # Create client .env file with backend endpoint
 RUN echo "VITE_BACKEND_ENDPOINT=${APP_URL}" > client/.env
@@ -109,7 +116,7 @@ RUN echo "VITE_BACKEND_ENDPOINT=${APP_URL}" > client/.env
 # Install client dependencies and build
 RUN cd client && npm install && npm run build
 
-# # Move React build to Laravel public directory
+# Move React build to Laravel public directory
 RUN cp -r client/dist/* public/
 
 # Expose port 80 for Apache

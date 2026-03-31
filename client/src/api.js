@@ -5,8 +5,13 @@ import toast from 'react-hot-toast';
 // AponKhoj API Client
 class ApiClient {
   constructor() {
+    const configuredBase = (secrets.backendEndpoint || 'http://localhost').replace(/\/+$/, '');
+    const apiBaseURL = /\/api$/i.test(configuredBase)
+      ? configuredBase
+      : `${configuredBase}/api`;
+
     this.client = axios.create({
-      baseURL: secrets.backendEndpoint,
+      baseURL: apiBaseURL,
       headers: {
         'Content-Type': 'application/json',
       },
