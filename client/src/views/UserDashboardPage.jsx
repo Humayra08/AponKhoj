@@ -7,6 +7,18 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../helpers/AuthContext';
 
+const formatDateBN = (dateStr) => {
+    if (!dateStr) return '—';
+
+    const date = new Date(dateStr);
+
+    return date.toLocaleDateString('bn-BD', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+    });
+};
+
 // Status Badge 
 const StatusBadge = ({ status }) => {
     const styles = {
@@ -243,7 +255,7 @@ export default function UserDashboardPage() {
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <MapPin size={13} className="text-gray-300 flex-shrink-0" />
-                                    <span>{user?.location || '—'}</span>
+                                    <span>{user?.district || '—'}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <span className="text-gray-300 text-[11px]">☎</span>
@@ -251,7 +263,7 @@ export default function UserDashboardPage() {
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <span className="text-gray-300 text-[11px]">📅</span>
-                                    <span>যোগদান: {user?.joinDate || '—'}</span>
+                                    <span>যোগদান: {formatDateBN(user?.created_at)}</span>
                                 </div>
                             </div>
                             <Link to="/profile" className="flex items-center justify-center gap-2 w-full border border-gray-200 text-gray-600 text-xs py-2 rounded-xl hover:border-primary hover:text-primary transition-colors font-medium">

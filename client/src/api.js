@@ -27,12 +27,6 @@ class ApiClient {
     });
   }
 
-  /**
-   * Login user
-   * @param {string} email 
-   * @param {string} password 
-   * @returns {Promise<{user: Object, access_token: string, token_type: string, expires_in: number}>}
-   */
   async login(email, password) {
     try {
       const response = await this.client.post('/auth/login', { email, password });
@@ -43,11 +37,6 @@ class ApiClient {
     }
   }
 
-  /**
-   * Register new user
-   * @param {Object} userData - {name, email, password, password_confirmation, phone?, district?}
-   * @returns {Promise<{user: Object, authorization: {token: string, type: string}}>}
-   */
   async register(userData) {
     try {
       const response = await this.client.post('/auth/register', userData);
@@ -58,10 +47,6 @@ class ApiClient {
     }
   }
 
-  /**
-   * Logout current user
-   * @returns {Promise<{message: string}>}
-   */
   async logout() {
     try {
       const response = await this.client.post('/auth/logout');
@@ -72,10 +57,6 @@ class ApiClient {
     }
   }
 
-  /**
-   * Get current authenticated user
-   * @returns {Promise<Object>}
-   */
   async getCurrentUser() {
     try {
       const response = await this.client.get('/auth/me');
@@ -86,10 +67,6 @@ class ApiClient {
     }
   }
 
-  /**
-   * Refresh JWT token
-   * @returns {Promise<{access_token: string, token_type: string, expires_in: number, user: Object}>}
-   */
   async refreshToken() {
     try {
       const response = await this.client.post('/auth/refresh');
@@ -100,12 +77,6 @@ class ApiClient {
     }
   }
 
-  /**
-   * Verify email with OTP code
-   * @param {string} email
-   * @param {string} code - 4-digit verification code
-   * @returns {Promise<{message: string, user: Object, authorization: {token: string, type: string}}>}
-   */
   async verifyEmail(email, code) {
     try {
       const response = await this.client.post('/auth/verify-email', { email, code });
@@ -116,11 +87,6 @@ class ApiClient {
     }
   }
 
-  /**
-   * Resend verification code
-   * @param {string} email
-   * @returns {Promise<{message: string}>}
-   */
   async resendCode(email) {
     try {
       const response = await this.client.post('/auth/resend-code', { email });
@@ -131,15 +97,83 @@ class ApiClient {
     }
   }
 
-  // Handle common errors
+  // ─── Profile endpoints ───────────────────────────────────────────
+
+  /**
+   * Get authenticated user's profile
+   * GET /api/profile
+   * @returns {Promise<Object>} profile data
+   */
+  async getProfile() {
+    try {
+      const response = await this.client.get('/profile');
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Full update of profile (replaces all fields)
+   * PUT /api/profile
+   * @param {Object} profileData - { name, phone, location, ... }
+   * @returns {Promise<Object>} updated profile
+   */
+  async updateProfile(profileData) {
+    try {
+      const response = await this.client.put('/profile', profileData);
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Partial update of profile (only sends changed fields)
+   * PATCH /api/profile
+   * @param {Object} profileData - partial fields to update
+   * @returns {Promise<Object>} updated profile
+   */
+  async patchProfile(profileData) {
+    try {
+      const response = await this.client.patch('/profile', profileData);
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Upload avatar image
+   * PATCH /api/profile — sends as multipart/form-data
+   * @param {File} file - image file
+   * @returns {Promise<Object>} updated profile with new avatarUrl
+   */
+  async uploadAvatar(file) {
+    try {
+      const formData = new FormData();
+      formData.append('avatar', file);
+      const response = await this.client.patch('/profile', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────────
+
   handleError(error) {
     if (error.response) {
       const errorData = error.response.data;
       console.error(`API Error: ${error.response.status}`, errorData);
-      
-      // Handle validation errors (422)
+
       if (error.response.status === 422 && errorData) {
-        // Laravel returns validation errors as an object with field names as keys
         const validationMessages = [];
         for (const field in errorData) {
           if (Array.isArray(errorData[field])) {
@@ -151,7 +185,7 @@ class ApiClient {
           return;
         }
       }
-      
+
       const message = errorData.message || errorData.error || 'Something went wrong';
       toast.error(message);
     } else if (error.request) {
@@ -164,7 +198,5 @@ class ApiClient {
   }
 }
 
-// Create singleton instance
 const apiClient = new ApiClient();
-
 export default apiClient;

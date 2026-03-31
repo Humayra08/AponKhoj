@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, Search, Loader2 } from 'lucide-react';
 import { useAuth } from '../helpers/AuthContext';
+import apiClient from '../api';
+
 
 const LoginPage = () => {
     const [showPassword, setShowPassword] = useState(false);
@@ -12,29 +14,27 @@ const LoginPage = () => {
     const navigate = useNavigate();
     const { login } = useAuth();
 
-    const handleLogin = async (e) => {
-        e.preventDefault();
-        setLoading(true);
-        // ── TODO: replace this mock with a real API call ──
-        // const res = await apiClient.login({ email, password });
-        // login(res.user, res.token);
-        await new Promise(r => setTimeout(r, 800)); // simulate network
-        login(
-            {
-                name: email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
-                email,
-                phone: '',
-                location: '',
-                role: loginType,   // 'user' or 'admin'
-                joinDate: new Date().toLocaleDateString('bn-BD'),
-            },
-            'mock-token-' + Date.now()
-        );
-        setLoading(false);
-        // role-based redirect
-        navigate(loginType === 'admin' ? '/admin/dashboard' : '/dashboard');
-    };
+const handleLogin = async (e) => {
+    e.preventDefault();
+    setLoading(true);
 
+    try {
+        const response = await apiClient.login(email.trim(), password);
+
+        login(response.user, response.access_token);
+
+        navigate(
+            response.user.role === 'admin'
+                ? '/admin/dashboard'
+                : '/dashboard'
+        );
+
+    } catch (error) {
+
+    } finally {
+        setLoading(false);
+    }
+};
     return (
         <div className="min-h-screen bg-background flex items-center justify-center py-12 px-4">
             <div className="bg-white rounded-2xl shadow-md w-full max-w-md p-8">
