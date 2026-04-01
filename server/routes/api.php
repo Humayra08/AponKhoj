@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\ProfileController;
 
 /*
@@ -43,4 +44,15 @@ Route::middleware('auth:api')->group(function () {
     
     // AponKhoj API Routes
     // Add your protected API routes here
+});
+
+// Admin-only API routes
+Route::middleware(['auth:api', 'admin.only'])->group(function () {
+    Route::get('admin/stats', [AdminController::class, 'stats']);
+    Route::get('admin/reports/recent', [AdminController::class, 'recentReports']);
+
+    Route::get('admin/moderation/stats', [AdminController::class, 'moderationStats']);
+    Route::get('admin/moderation/reports', [AdminController::class, 'moderationReports']);
+    Route::get('admin/moderation/flagged-users', [AdminController::class, 'moderationFlaggedUsers']);
+    Route::get('admin/moderation/appeals', [AdminController::class, 'moderationAppeals']);
 });

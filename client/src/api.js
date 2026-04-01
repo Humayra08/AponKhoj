@@ -27,9 +27,9 @@ class ApiClient {
     });
   }
 
-  async login(email, password) {
+  async login(email, password, loginType = 'user') {
     try {
-      const response = await this.client.post('/auth/login', { email, password });
+      const response = await this.client.post('/auth/login', { email, password, login_type: loginType });
       return response.data;
     } catch (error) {
       this.handleError(error);
@@ -90,6 +90,46 @@ class ApiClient {
   async resendCode(email) {
     try {
       const response = await this.client.post('/auth/resend-code', { email });
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
+  async get(url, config = {}) {
+    try {
+      const response = await this.client.get(url, config);
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
+  async post(url, data = {}, config = {}) {
+    try {
+      const response = await this.client.post(url, data, config);
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
+  async put(url, data = {}, config = {}) {
+    try {
+      const response = await this.client.put(url, data, config);
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
+  async patch(url, data = {}, config = {}) {
+    try {
+      const response = await this.client.patch(url, data, config);
       return response.data;
     } catch (error) {
       this.handleError(error);
