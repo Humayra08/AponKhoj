@@ -68,13 +68,13 @@ const RegistrationPage = () => {
                     <p className="text-gray-500 text-sm mt-1">নতুন অ্যাকাউন্ট তৈরি করুন</p>
                 </div>
 
-                <form onSubmit={handleRegister} className="space-y-4">
+                <form onSubmit={handleRegister} autoComplete="off" className="space-y-4">
                     {/* পূর্ণ নাম — always shown */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">পূর্ণ নাম</label>
                         <div className="relative">
                             <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                            <input type="text" name="name" value={form.name} onChange={handleChange}
+                            <input type="text" name="name" value={form.name} onChange={handleChange} autoComplete="off"
                                 placeholder="আপনার পূর্ণ নাম" required
                                 className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary" />
                         </div>
@@ -84,7 +84,7 @@ const RegistrationPage = () => {
                         <label className="block text-sm font-medium text-gray-700 mb-1">ইমেইল</label>
                         <div className="relative">
                             <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                            <input type="email" name="email" value={form.email} onChange={handleChange}
+                            <input type="email" name="email" value={form.email} onChange={handleChange} autoComplete="off"
                                 placeholder="example@email.com" required
                                 className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary" />
                         </div>
@@ -94,7 +94,7 @@ const RegistrationPage = () => {
                         <label className="block text-sm font-medium text-gray-700 mb-1">ফোন নম্বর</label>
                         <div className="relative">
                             <Phone size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                            <input type="tel" name="phone" value={form.phone} onChange={handleChange}
+                            <input type="tel" name="phone" value={form.phone} onChange={handleChange} autoComplete="off"
                                 placeholder="01XXXXXXXXX"
                                 className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary" />
                         </div>
@@ -119,6 +119,7 @@ const RegistrationPage = () => {
                             <input
                                 type={showPassword ? 'text' : 'password'}
                                 name="password" value={form.password} onChange={handleChange}
+                                autoComplete="new-password"
                                 placeholder="••••••••" required minLength="8"
                                 className="w-full pl-10 pr-10 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                             />
@@ -135,6 +136,7 @@ const RegistrationPage = () => {
                             <input
                                 type={showConfirmPassword ? 'text' : 'password'}
                                 name="password_confirmation" value={form.password_confirmation} onChange={handleChange}
+                                autoComplete="new-password"
                                 placeholder="••••••••" required minLength="8"
                                 className="w-full pl-10 pr-10 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                             />

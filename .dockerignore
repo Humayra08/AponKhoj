@@ -1,5 +1,6 @@
 **/vendor
 **/node_modules
 **/dist
+server/public/storage
 .env
 .env.local

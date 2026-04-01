@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, Search, Loader2 } from 'lucide-react';
 import { useAuth } from '../helpers/AuthContext';
+import apiClient from '../api';
+
 
 const LoginPage = () => {
     const [showPassword, setShowPassword] = useState(false);
@@ -12,29 +14,27 @@ const LoginPage = () => {
     const navigate = useNavigate();
     const { login } = useAuth();
 
-    const handleLogin = async (e) => {
-        e.preventDefault();
-        setLoading(true);
-        // ── TODO: replace this mock with a real API call ──
-        // const res = await apiClient.login({ email, password });
-        // login(res.user, res.token);
-        await new Promise(r => setTimeout(r, 800)); // simulate network
-        login(
-            {
-                name: email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
-                email,
-                phone: '',
-                location: '',
-                role: loginType,   // 'user' or 'admin'
-                joinDate: new Date().toLocaleDateString('bn-BD'),
-            },
-            'mock-token-' + Date.now()
-        );
-        setLoading(false);
-        // role-based redirect
-        navigate(loginType === 'admin' ? '/admin/dashboard' : '/dashboard');
-    };
+const handleLogin = async (e) => {
+    e.preventDefault();
+    setLoading(true);
 
+    try {
+        const response = await apiClient.login(email.trim(), password);
+
+        login(response.user, response.access_token);
+
+        navigate(
+            response.user.role === 'admin'
+                ? '/admin/dashboard'
+                : '/dashboard'
+        );
+
+    } catch (error) {
+
+    } finally {
+        setLoading(false);
+    }
+};
     return (
         <div className="min-h-screen bg-background flex items-center justify-center py-12 px-4">
             <div className="bg-white rounded-2xl shadow-md w-full max-w-md p-8">
@@ -73,13 +73,14 @@ const LoginPage = () => {
                     </button>
                 </div>
 
-                <form onSubmit={handleLogin} className="space-y-5">
+                <form onSubmit={handleLogin} autoComplete="off" className="space-y-5">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">ইমেইল</label>
                         <div className="relative">
                             <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                             <input
                                 type="email"
+                                autoComplete="off"
                                 placeholder="example@email.com"
                                 value={email}
                                 onChange={e => setEmail(e.target.value)}
@@ -95,6 +96,7 @@ const LoginPage = () => {
                             <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                             <input
                                 type={showPassword ? 'text' : 'password'}
+                                autoComplete="new-password"
                                 placeholder="••••••••"
                                 value={password}
                                 onChange={e => setPassword(e.target.value)}

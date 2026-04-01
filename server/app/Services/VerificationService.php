@@ -2,13 +2,27 @@
 
 namespace App\Services;
 
-use App\Models\VerificationCode;
 use App\Models\User;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Redis;
 
 class VerificationService
 {
+    /**
+     * Redis key prefix for OTP storage.
+     *
+     * @var string
+     */
+    private const OTP_KEY_PREFIX = 'verification_code:';
+
+    /**
+     * OTP validity in seconds.
+     *
+     * @var int
+     */
+    private const OTP_TTL_SECONDS = 900;
+
     /**
      * Generate a random 4-digit verification code.
      *
@@ -23,30 +37,30 @@ class VerificationService
      * Create and send a verification code to the user's email.
      *
      * @param string $email
-     * @return VerificationCode
+     * @return array<string, mixed>
      */
     public function createAndSendCode($email)
     {
-        // Delete any existing unverified codes for this email
-        VerificationCode::where('email', $email)
-            ->where('verified', false)
-            ->delete();
-
         // Generate new code
         $code = $this->generateCode();
 
-        // Create verification code record
-        $verification = VerificationCode::create([
+        // Store OTP in Redis with expiration.
+        $payload = [
             'email' => $email,
             'code' => $code,
-            'expires_at' => now()->addMinutes(15), // Code expires in 15 minutes
-            'verified' => false,
-        ]);
+            'expires_at' => now()->addSeconds(self::OTP_TTL_SECONDS)->toIso8601String(),
+        ];
+
+        Redis::setex(
+            $this->otpKey($email),
+            self::OTP_TTL_SECONDS,
+            json_encode($payload)
+        );
 
         // Send email with code
         $this->sendVerificationEmail($email, $code);
 
-        return $verification;
+        return $payload;
     }
 
     /**
@@ -92,22 +106,20 @@ class VerificationService
      */
     public function verifyCode($email, $code)
     {
-        $verification = VerificationCode::where('email', $email)
-            ->where('code', $code)
-            ->where('verified', false)
-            ->latest()
-            ->first();
+        $stored = Redis::get($this->otpKey($email));
 
-        if (!$verification) {
+        if (!$stored) {
             return false;
         }
 
-        if ($verification->isExpired()) {
+        $data = json_decode($stored, true);
+
+        if (!is_array($data) || !isset($data['code']) || $data['code'] !== $code) {
             return false;
         }
 
-        // Mark as verified
-        $verification->update(['verified' => true]);
+        // Enforce one-time usage after successful verification.
+        Redis::del($this->otpKey($email));
 
         return true;
     }
@@ -120,10 +132,7 @@ class VerificationService
      */
     public function hasValidCode($email)
     {
-        return VerificationCode::where('email', $email)
-            ->where('verified', false)
-            ->where('expires_at', '>', now())
-            ->exists();
+        return Redis::exists($this->otpKey($email)) > 0;
     }
 
     /**
@@ -134,10 +143,25 @@ class VerificationService
      */
     public function getLatestCode($email)
     {
-        $verification = VerificationCode::where('email', $email)
-            ->latest()
-            ->first();
+        $stored = Redis::get($this->otpKey($email));
 
-        return $verification ? $verification->code : null;
+        if (!$stored) {
+            return null;
+        }
+
+        $data = json_decode($stored, true);
+
+        return is_array($data) && isset($data['code']) ? $data['code'] : null;
+    }
+
+    /**
+     * Build a case-insensitive Redis key for an email.
+     *
+     * @param string $email
+     * @return string
+     */
+    private function otpKey($email)
+    {
+        return self::OTP_KEY_PREFIX . strtolower(trim($email));
     }
 }

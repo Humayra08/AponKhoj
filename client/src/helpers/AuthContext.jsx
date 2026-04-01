@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import apiClient from '../api';
 
 /**
  * AuthContext — Global authentication state for AponKhoj.
@@ -21,20 +22,50 @@ export function AuthProvider({ children }) {
 
     // On mount: restore session from localStorage
     useEffect(() => {
-        try {
-            const savedUser = localStorage.getItem('aponkhoj_user');
-            const savedToken = localStorage.getItem('aponkhoj_token');
-            if (savedUser && savedToken) {
-                setUser(JSON.parse(savedUser));
+        let cancelled = false;
+
+        const bootstrapAuth = async () => {
+            try {
+                const savedUser = localStorage.getItem('aponkhoj_user');
+                const savedToken = localStorage.getItem('aponkhoj_token');
+
+                if (!savedToken) {
+                    return;
+                }
+
+                const parsedUser = savedUser ? JSON.parse(savedUser) : null;
                 setToken(savedToken);
+
+                // Validate token with backend to prevent fake/stale local login state.
+                const currentUser = await apiClient.getCurrentUser();
+                if (cancelled) return;
+
+                const userWithRole = {
+                    role: parsedUser?.role || 'user',
+                    ...(parsedUser || {}),
+                    ...(currentUser || {}),
+                };
+
+                setUser(userWithRole);
+                localStorage.setItem('aponkhoj_user', JSON.stringify(userWithRole));
+            } catch {
+                if (cancelled) return;
+                localStorage.removeItem('aponkhoj_user');
+                localStorage.removeItem('aponkhoj_token');
+                setUser(null);
+                setToken(null);
+            } finally {
+                if (!cancelled) {
+                    setLoading(false);
+                }
             }
-        } catch {
-            // corrupted storage — clear it
-            localStorage.removeItem('aponkhoj_user');
-            localStorage.removeItem('aponkhoj_token');
-        } finally {
-            setLoading(false);
-        }
+        };
+
+        bootstrapAuth();
+
+        return () => {
+            cancelled = true;
+        };
     }, []);
 
     /** Call this after a successful login or registration API response */

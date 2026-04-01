@@ -1,12 +1,13 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
     User, Mail, Phone, MapPin, Lock, Eye, EyeOff,
     Bell, Shield, LogOut, Camera, CheckCircle, AlertTriangle,
-    ChevronRight, Settings, Save, ArrowLeft, Loader2, Edit3,
+    ChevronRight, Settings, Save, ArrowLeft, Loader2,
     FileText, Key, Trash2, HelpCircle
 } from 'lucide-react';
 import { useAuth } from '../helpers/AuthContext';
+import apiClient from '../api';
 
 /* ─────── reusable input ─────── */
 const Field = ({ label, icon: Icon, error, children }) => (
@@ -46,14 +47,15 @@ const Avatar = ({ user, size = 'lg' }) => {
    TAB: Personal Info
 ═══════════════════════════════════════════ */
 function PersonalInfoTab({ user, updateUser }) {
-    const [form, setForm] = useState({
-        name: user?.name || '',
-        phone: user?.phone || '',
-        location: user?.location || '',
-    });
+   const [form, setForm] = useState({
+    name: user?.name || '',
+    phone: user?.phone || '',
+    district: user?.district || '',
+});
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
-    const [avatar, setAvatar] = useState(user?.avatarUrl || null);
+    const [avatarPreview, setAvatarPreview] = useState(user?.avatarUrl || null);
+    const [avatarFile, setAvatarFile] = useState(null);
     const fileRef = useRef();
 
     const handleChange = e => setForm(p => ({ ...p, [e.target.name]: e.target.value }));
@@ -61,18 +63,35 @@ function PersonalInfoTab({ user, updateUser }) {
     const handleAvatarChange = e => {
         const file = e.target.files[0];
         if (!file) return;
-        const url = URL.createObjectURL(file);
-        setAvatar(url);
+        setAvatarFile(file);
+        // Show local preview immediately
+        setAvatarPreview(URL.createObjectURL(file));
     };
 
     const handleSave = async (e) => {
         e.preventDefault();
         setSaving(true);
-        await new Promise(r => setTimeout(r, 900)); // replace with real API call
-        updateUser({ ...form, avatarUrl: avatar });
-        setSaving(false);
-        setSaved(true);
-        setTimeout(() => setSaved(false), 3000);
+        try {
+            // If a new avatar was picked, upload it first via PATCH multipart
+            if (avatarFile) {
+                const avatarRes = await apiClient.uploadAvatar(avatarFile);
+                updateUser(avatarRes.user || avatarRes);
+                setAvatarFile(null);
+            }
+
+            // PATCH /api/profile — only sends the changed text fields
+            const res = await apiClient.patchProfile({
+            name: form.name,
+            phone: form.phone,
+            district: form.district,
+        });
+            updateUser(res.user);
+
+            setSaved(true);
+            setTimeout(() => setSaved(false), 3000);
+        } finally {
+            setSaving(false);
+        }
     };
 
     return (
@@ -83,7 +102,7 @@ function PersonalInfoTab({ user, updateUser }) {
             {/* Avatar */}
             <div className="flex items-center gap-5 mb-8 p-5 bg-gray-50 rounded-2xl border border-gray-100">
                 <div className="relative">
-                    <Avatar user={{ ...user, avatarUrl: avatar }} size="lg" />
+                    <Avatar user={{ ...user, avatarUrl: avatarPreview }} size="lg" />
                     <button
                         type="button"
                         onClick={() => fileRef.current.click()}
@@ -120,7 +139,7 @@ function PersonalInfoTab({ user, updateUser }) {
                 </Field>
 
                 <Field label="জেলা / অবস্থান" icon={MapPin}>
-                    <select className={inputCls()} name="location" value={form.location} onChange={handleChange}>
+                    <select className={inputCls()} name="district" value={form.district} onChange={handleChange}>
                         <option value="">জেলা নির্বাচন করুন</option>
                         {['ঢাকা', 'চট্টগ্রাম', 'রাজশাহী', 'খুলনা', 'বরিশাল', 'সিলেট', 'রংপুর', 'ময়মনসিংহ'].map(d =>
                             <option key={d} value={d}>{d}</option>
@@ -159,11 +178,19 @@ function PasswordTab() {
         if (form.newPass !== form.confirm) { setError('নতুন পাসওয়ার্ড দুটি মিলছে না'); return; }
         if (form.newPass.length < 8) { setError('পাসওয়ার্ড কমপক্ষে ৮ অক্ষরের হতে হবে'); return; }
         setSaving(true);
-        await new Promise(r => setTimeout(r, 900)); // replace with real API
-        setSaving(false);
-        setSaved(true);
-        setForm({ current: '', newPass: '', confirm: '' });
-        setTimeout(() => setSaved(false), 3000);
+        try {
+            // PATCH /api/profile — Laravel expects current_password, password, password_confirmation
+            await apiClient.patchProfile({
+                current_password: form.current,
+                password: form.newPass,
+                password_confirmation: form.confirm,
+            });
+            setSaved(true);
+            setForm({ current: '', newPass: '', confirm: '' });
+            setTimeout(() => setSaved(false), 3000);
+        } finally {
+            setSaving(false);
+        }
     };
 
     const EyeBtn = ({ k }) => (
@@ -202,7 +229,6 @@ function PasswordTab() {
                     <EyeBtn k="confirm" />
                 </Field>
 
-                {/* Password strength hint */}
                 <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 text-xs text-blue-600 space-y-1">
                     <p className="font-semibold mb-1.5">শক্তিশালী পাসওয়ার্ডের জন্য:</p>
                     <p>✓ কমপক্ষে ৮টি অক্ষর ব্যবহার করুন</p>
@@ -233,9 +259,22 @@ function NotificationsTab() {
         weeklyDigest: true,
         newsUpdates: false,
     });
+    const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
 
     const toggle = key => setPrefs(p => ({ ...p, [key]: !p[key] }));
+
+    const handleSave = async () => {
+        setSaving(true);
+        try {
+            // PATCH /api/profile — sends prefs as nested object
+            await apiClient.patchProfile({ notification_preferences: prefs });
+            setSaved(true);
+            setTimeout(() => setSaved(false), 3000);
+        } finally {
+            setSaving(false);
+        }
+    };
 
     const Toggle = ({ k, label, desc }) => (
         <div className="flex items-center justify-between py-4 border-b border-gray-50 last:border-0">
@@ -265,10 +304,12 @@ function NotificationsTab() {
                 <Toggle k="newsUpdates" label="প্ল্যাটফর্ম আপডেট" desc="আপনখোঁজ প্ল্যাটফর্মের নতুন ফিচার সম্পর্কে জানুন" />
             </div>
 
-            <button onClick={() => { setSaved(true); setTimeout(() => setSaved(false), 3000); }}
+            <button onClick={handleSave} disabled={saving}
                 className="flex items-center justify-center gap-2 w-full bg-primary hover:bg-primary-dark
-                           text-white py-3 rounded-xl font-bold text-sm transition-all shadow-sm">
-                {saved ? <><CheckCircle size={16} /> সংরক্ষিত হয়েছে!</> : <><Save size={16} /> পছন্দ সংরক্ষণ করুন</>}
+                           text-white py-3 rounded-xl font-bold text-sm transition-all shadow-sm disabled:opacity-60">
+                {saving ? <><Loader2 size={16} className="animate-spin" /> সংরক্ষণ হচ্ছে...</>
+                    : saved ? <><CheckCircle size={16} /> সংরক্ষিত হয়েছে!</>
+                        : <><Save size={16} /> পছন্দ সংরক্ষণ করুন</>}
             </button>
         </div>
     );
@@ -284,29 +325,26 @@ function SecurityTab() {
             <p className="text-sm text-gray-400 mb-7">আপনার অ্যাকাউন্টের নিরাপত্তা পর্যালোচনা করুন</p>
 
             <div className="space-y-4">
-                {/* Active sessions */}
                 <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
                     <h3 className="font-bold text-gray-800 text-sm mb-4 flex items-center gap-2">
                         <Shield size={15} className="text-primary" /> সক্রিয় সেশন
                     </h3>
                     <div className="space-y-3">
-                        {[
-                            { device: 'এই ডিভাইস (Chrome — Windows)', time: 'এখন সক্রিয়', current: true },
-                        ].map((s, i) => (
-                            <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
-                                <div>
-                                    <p className="text-xs font-semibold text-gray-700">{s.device}</p>
-                                    <p className="text-[10px] text-gray-400 mt-0.5">{s.time}</p>
+                        {[{ device: 'এই ডিভাইস (Chrome — Windows)', time: 'এখন সক্রিয়', current: true }]
+                            .map((s, i) => (
+                                <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                                    <div>
+                                        <p className="text-xs font-semibold text-gray-700">{s.device}</p>
+                                        <p className="text-[10px] text-gray-400 mt-0.5">{s.time}</p>
+                                    </div>
+                                    {s.current
+                                        ? <span className="text-[10px] font-bold text-teal-600 bg-teal-50 px-2 py-0.5 rounded-full">বর্তমান</span>
+                                        : <button className="text-[10px] text-red-500 hover:underline">লগআউট</button>}
                                 </div>
-                                {s.current
-                                    ? <span className="text-[10px] font-bold text-teal-600 bg-teal-50 px-2 py-0.5 rounded-full">বর্তমান</span>
-                                    : <button className="text-[10px] text-red-500 hover:underline">লগআউট</button>}
-                            </div>
-                        ))}
+                            ))}
                     </div>
                 </div>
 
-                {/* Two-factor (UI only for now) */}
                 <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
                     <div className="flex items-center justify-between">
                         <div>
@@ -317,7 +355,6 @@ function SecurityTab() {
                     </div>
                 </div>
 
-                {/* Delete account warning */}
                 <div className="bg-red-50 border border-red-200 rounded-2xl p-5">
                     <h3 className="font-bold text-red-700 text-sm flex items-center gap-2 mb-1">
                         <Trash2 size={15} /> অ্যাকাউন্ট মুছে ফেলুন
@@ -334,7 +371,7 @@ function SecurityTab() {
 }
 
 /* ═══════════════════════════════════════════
-   TAB: My Reports (quick summary)
+   TAB: My Reports
 ═══════════════════════════════════════════ */
 function MyReportsTab() {
     return (
@@ -367,6 +404,7 @@ function HelpTab() {
         { q: 'কোনো সাফল্যের গল্প আছে কি?', a: 'হ্যাঁ, আমাদের প্ল্যাটফর্মের মাধ্যমে ইতিমধ্যে বেশ কিছু পরিবার পুনর্মিলিত হয়েছে।' },
     ];
     const [open, setOpen] = useState(null);
+
     return (
         <div>
             <h2 className="text-xl font-black text-gray-800 mb-1">সহায়তা কেন্দ্র</h2>
@@ -408,12 +446,12 @@ function HelpTab() {
    MAIN PAGE
 ═══════════════════════════════════════════ */
 const TABS = [
-    { id: 'profile', label: 'ব্যক্তিগত তথ্য', icon: User, Component: PersonalInfoTab },
-    { id: 'password', label: 'পাসওয়ার্ড', icon: Key, Component: PasswordTab },
-    { id: 'notifications', label: 'বিজ্ঞপ্তি', icon: Bell, Component: NotificationsTab },
-    { id: 'reports', label: 'আমার রিপোর্ট', icon: FileText, Component: MyReportsTab },
-    { id: 'security', label: 'নিরাপত্তা', icon: Shield, Component: SecurityTab },
-    { id: 'help', label: 'সহায়তা', icon: HelpCircle, Component: HelpTab },
+    { id: 'profile',       label: 'ব্যক্তিগত তথ্য', icon: User,        Component: PersonalInfoTab },
+    { id: 'password',      label: 'পাসওয়ার্ড',       icon: Key,         Component: PasswordTab },
+    { id: 'notifications', label: 'বিজ্ঞপ্তি',        icon: Bell,        Component: NotificationsTab },
+    { id: 'reports',       label: 'আমার রিপোর্ট',     icon: FileText,    Component: MyReportsTab },
+    { id: 'security',      label: 'নিরাপত্তা',        icon: Shield,      Component: SecurityTab },
+    { id: 'help',          label: 'সহায়তা',           icon: HelpCircle,  Component: HelpTab },
 ];
 
 export default function UserProfilePage() {
@@ -421,16 +459,19 @@ export default function UserProfilePage() {
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
 
-    // Read ?tab= from URL, fallback to 'profile'
+    // Fetch fresh profile from backend on mount so data is always up to date
+    useEffect(() => {
+        if (!isAuthenticated) return;
+        apiClient.getProfile()
+            .then(res => updateUser(res.user || res))
+            .catch(() => {}); // toast already shown by apiClient.handleError
+    }, [isAuthenticated]);
+
     const VALID_TABS = TABS.map(t => t.id);
     const rawTab = searchParams.get('tab');
     const activeTab = VALID_TABS.includes(rawTab) ? rawTab : 'profile';
-
-    // Update both state and URL when switching tabs
     const setActiveTab = (id) => setSearchParams({ tab: id }, { replace: true });
-    const [sidebarOpen, setSidebarOpen] = useState(false); // mobile sidebar toggle
 
-    // Redirect to login if not authenticated
     if (!isAuthenticated) {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-background">
@@ -456,7 +497,6 @@ export default function UserProfilePage() {
     return (
         <div className="min-h-screen bg-background">
 
-            {/* ── Page Header ── */}
             <div className="bg-white border-b border-gray-100 shadow-sm">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-3">
                     <button onClick={() => navigate(-1)}
@@ -474,10 +514,8 @@ export default function UserProfilePage() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
                 <div className="flex gap-6">
 
-                    {/* ── Sidebar ── */}
+                    {/* ── Sidebar (desktop) ── */}
                     <aside className="hidden lg:flex flex-col w-64 flex-shrink-0">
-
-                        {/* Profile card */}
                         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-4">
                             <div className="flex flex-col items-center text-center">
                                 <Avatar user={user} size="lg" />
@@ -490,34 +528,25 @@ export default function UserProfilePage() {
                                     </span>
                                 )}
                                 {user?.joinDate && (
-                                    <p className="text-[10px] text-gray-400 mt-2">
-                                        যোগদান: {user.joinDate}
-                                    </p>
+                                    <p className="text-[10px] text-gray-400 mt-2">যোগদান: {user.joinDate}</p>
                                 )}
                             </div>
                         </div>
 
-                        {/* Nav links */}
                         <nav className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex-1">
                             {TABS.map(tab => (
-                                <button
-                                    key={tab.id}
-                                    onClick={() => setActiveTab(tab.id)}
+                                <button key={tab.id} onClick={() => setActiveTab(tab.id)}
                                     className={`flex items-center gap-3 w-full px-4 py-3.5 text-left text-sm
                                                 transition-all border-b border-gray-50 last:border-0
                                                 ${activeTab === tab.id
                                             ? 'bg-primary/5 text-primary font-bold border-l-2 border-l-primary'
-                                            : 'text-gray-600 hover:bg-gray-50 font-medium'}`}
-                                >
+                                            : 'text-gray-600 hover:bg-gray-50 font-medium'}`}>
                                     <tab.icon size={15} className="flex-shrink-0" />
                                     {tab.label}
                                     {activeTab === tab.id && <ChevronRight size={13} className="ml-auto" />}
                                 </button>
                             ))}
-
-                            {/* Logout */}
-                            <button
-                                onClick={handleLogout}
+                            <button onClick={handleLogout}
                                 className="flex items-center gap-3 w-full px-4 py-3.5 text-left text-sm
                                            text-red-500 hover:bg-red-50 font-medium transition-colors border-t border-gray-100">
                                 <LogOut size={15} className="flex-shrink-0" />
@@ -526,10 +555,9 @@ export default function UserProfilePage() {
                         </nav>
                     </aside>
 
-                    {/* ── Mobile Sidebar Toggle ── */}
+                    {/* ── Mobile Tabs ── */}
                     <div className="lg:hidden w-full mb-4">
                         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
-                            {/* Current tab select on mobile */}
                             <div className="flex items-center gap-3 p-4 border-b border-gray-50">
                                 <Avatar user={user} size="sm" />
                                 <div className="flex-1">
@@ -563,7 +591,6 @@ export default function UserProfilePage() {
                             <ActiveComp user={user} updateUser={updateUser} />
                         </div>
 
-                        {/* Quick links */}
                         <div className="grid grid-cols-2 gap-3 mt-4">
                             <Link to="/dashboard"
                                 className="flex items-center gap-2 bg-white border border-gray-100 rounded-2xl
@@ -581,6 +608,7 @@ export default function UserProfilePage() {
                     </main>
 
                 </div>
+                
             </div>
         </div>
     );
