@@ -73,13 +73,14 @@ const handleLogin = async (e) => {
                     </button>
                 </div>
 
-                <form onSubmit={handleLogin} className="space-y-5">
+                <form onSubmit={handleLogin} autoComplete="off" className="space-y-5">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">ইমেইল</label>
                         <div className="relative">
                             <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                             <input
                                 type="email"
+                                autoComplete="off"
                                 placeholder="example@email.com"
                                 value={email}
                                 onChange={e => setEmail(e.target.value)}
@@ -95,6 +96,7 @@ const handleLogin = async (e) => {
                             <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                             <input
                                 type={showPassword ? 'text' : 'password'}
+                                autoComplete="new-password"
                                 placeholder="••••••••"
                                 value={password}
                                 onChange={e => setPassword(e.target.value)}
