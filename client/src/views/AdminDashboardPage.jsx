@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../helpers/AuthContext';
 import AdminNavbar from '../Components/AdminNavbar';
+import apiClient from '../api';
 
 /* ─────────────────────────────────────────────────────────────
    DATA HOOK
@@ -47,18 +48,50 @@ function useAdminData() {
     const [activity, setActivity] = useState([]);
 
     useEffect(() => {
-        /* ────────────────────────────────────────────────────
-           TODO: replace the block below with real API calls
-           Example:
-             const [statsRes, reportsRes] = await Promise.all([
-               apiClient.get('/admin/stats'),
-               apiClient.get('/admin/reports/recent'),
-             ]);
-             setStats(statsRes.data);
-             setReports(reportsRes.data);
-             ...
-           ──────────────────────────────────────────────────── */
-        setLoading(false);   // remove this line once you have real data
+        let mounted = true;
+
+        const loadAdminData = async () => {
+            try {
+                const [statsRes, reportsRes] = await Promise.all([
+                    apiClient.get('/admin/stats'),
+                    apiClient.get('/admin/reports/recent'),
+                ]);
+
+                if (!mounted) return;
+
+                setStats(statsRes?.stats || {
+                    totalReports: 0,
+                    activeMissing: 0,
+                    reunions: 0,
+                    users: 0,
+                    newUsersWeek: 0,
+                    successRate: 0,
+                });
+                setMonthlyData(statsRes?.monthlyData || []);
+                setStatusData(statsRes?.statusData || []);
+                setDivisions(statsRes?.divisions || []);
+                setRecentUsers(statsRes?.recentUsers || []);
+                setActivity(statsRes?.activity || []);
+                setReports(Array.isArray(reportsRes) ? reportsRes : []);
+            } catch {
+                if (!mounted) return;
+                setStats({ totalReports: 0, activeMissing: 0, reunions: 0, users: 0, newUsersWeek: 0, successRate: 0 });
+                setMonthlyData([]);
+                setStatusData([]);
+                setDivisions([]);
+                setReports([]);
+                setRecentUsers([]);
+                setActivity([]);
+            } finally {
+                if (mounted) setLoading(false);
+            }
+        };
+
+        loadAdminData();
+
+        return () => {
+            mounted = false;
+        };
     }, []);
 
     return {

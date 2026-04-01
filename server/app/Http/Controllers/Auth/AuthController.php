@@ -18,6 +18,7 @@ class AuthController extends Controller
     public function __construct()
     {
         $this->middleware('auth:api', ['except' => ['login', 'register', 'verifyEmail', 'resendCode']]);
+        $this->syncAdminAccounts();
     }
 
     public function login(Request $request)
@@ -25,13 +26,33 @@ class AuthController extends Controller
         $validator = Validator::make($request->all(), [
             'email' => 'required|email',
             'password' => 'required|string|min:8',
+            'login_type' => 'nullable|string|in:user,admin',
         ]);
 
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
         }
 
-        if (!$token = auth()->attempt($validator->validated())) {
+        $credentials = $validator->validated();
+        $loginType = $credentials['login_type'] ?? 'user';
+        $adminCredential = $this->findAdminCredential($credentials['email']);
+
+        if ($loginType === 'admin' && !$adminCredential) {
+            return response()->json(['error' => 'Only configured admin accounts can use admin login.'], 403);
+        }
+
+        if ($loginType === 'user' && $adminCredential) {
+            return response()->json(['error' => 'Admin accounts must use admin login.'], 403);
+        }
+
+        // Admin emails are hard-locked to the configured passwords.
+        if ($adminCredential && $credentials['password'] !== $adminCredential['password']) {
+            return response()->json(['error' => 'Invalid credentials'], 401);
+        }
+
+        unset($credentials['login_type']);
+
+        if (!$token = auth()->attempt($credentials)) {
             return response()->json(['error' => 'Invalid credentials'], 401);
         }
 
@@ -50,6 +71,12 @@ class AuthController extends Controller
 
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
+        }
+
+        if ($this->isAdminEmail($request->email)) {
+            return response()->json([
+                'message' => 'This email is reserved for admin access only.',
+            ], 403);
         }
 
         $pendingKey = $this->pendingRegistrationKey($request->email);
@@ -124,7 +151,7 @@ class AuthController extends Controller
 
         return response()->json([
             'message'       => 'Email verified successfully. Account created.',
-            'user'          => $user,
+            'user'          => $this->serializeUser($user),
             'authorization' => [
                 'token' => $token,
                 'type'  => 'bearer',
@@ -178,7 +205,7 @@ class AuthController extends Controller
 
     public function me()
     {
-        return response()->json(auth()->user());
+        return response()->json($this->serializeUser(auth()->user()));
     }
 
     protected function respondWithToken($token)
@@ -187,12 +214,80 @@ class AuthController extends Controller
             'access_token' => $token,
             'token_type'   => 'bearer',
             'expires_in'   => auth()->factory()->getTTL() * 60,
-            'user'         => auth()->user(),
+            'user'         => $this->serializeUser(auth()->user()),
         ]);
     }
 
     private function pendingRegistrationKey($email)
     {
         return self::PENDING_REG_PREFIX . strtolower(trim($email));
+    }
+
+    private function serializeUser(User $user)
+    {
+        $userData = $user->toArray();
+        $userData['role'] = $this->isAdminEmail($user->email) ? 'admin' : 'user';
+
+        return $userData;
+    }
+
+    private function syncAdminAccounts()
+    {
+        foreach ($this->adminCredentials() as $admin) {
+            $user = User::where('email', $admin['email'])->first();
+
+            if (!$user) {
+                User::create([
+                    'name' => $admin['name'],
+                    'email' => $admin['email'],
+                    'password' => Hash::make($admin['password']),
+                    'email_verified_at' => now(),
+                ]);
+                continue;
+            }
+
+            if (!Hash::check($admin['password'], $user->password)) {
+                $user->password = Hash::make($admin['password']);
+                if (!$user->email_verified_at) {
+                    $user->email_verified_at = now();
+                }
+                $user->save();
+            }
+        }
+    }
+
+    private function adminCredentials()
+    {
+        $credentials = config('admin.credentials', []);
+
+        return array_values(array_filter($credentials, function ($admin) {
+            return isset($admin['email'], $admin['password'])
+                && is_string($admin['email'])
+                && is_string($admin['password'])
+                && trim($admin['email']) !== ''
+                && trim($admin['password']) !== '';
+        }));
+    }
+
+    private function findAdminCredential($email)
+    {
+        $normalizedEmail = strtolower(trim($email));
+
+        foreach ($this->adminCredentials() as $admin) {
+            if (strtolower(trim($admin['email'])) === $normalizedEmail) {
+                return [
+                    'email' => strtolower(trim($admin['email'])),
+                    'password' => $admin['password'],
+                    'name' => $admin['name'] ?? 'Admin',
+                ];
+            }
+        }
+
+        return null;
+    }
+
+    private function isAdminEmail($email)
+    {
+        return $this->findAdminCredential($email) !== null;
     }
 }

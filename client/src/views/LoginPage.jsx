@@ -19,7 +19,7 @@ const handleLogin = async (e) => {
     setLoading(true);
 
     try {
-        const response = await apiClient.login(email.trim(), password);
+        const response = await apiClient.login(email.trim(), password, loginType);
 
         login(response.user, response.access_token);
 

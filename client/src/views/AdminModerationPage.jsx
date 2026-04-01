@@ -10,6 +10,7 @@ import {
 import { AdminSidebar } from './AdminDashboardPage';
 import { useAuth } from '../helpers/AuthContext';
 import AdminNavbar from '../Components/AdminNavbar';
+import apiClient from '../api';
 
 /* ══════════════════════════════════════════
    DATA HOOK — wire up API calls here
@@ -42,20 +43,44 @@ function useModerationData() {
     const [appeals, setAppeals] = useState([]);
 
     useEffect(() => {
-        /* ─────────────────────────────────────────────
-           TODO: replace with real API calls, e.g.:
-             const [statsRes, reportRes, usersRes, appealsRes] = await Promise.all([
-               apiClient.get('/admin/moderation/stats'),
-               apiClient.get('/admin/moderation/reports'),
-               apiClient.get('/admin/moderation/flagged-users'),
-               apiClient.get('/admin/moderation/appeals'),
-             ]);
-             setStats(statsRes.data);
-             setPendingReports(reportRes.data);
-             setFlaggedUsers(usersRes.data);
-             setAppeals(appealsRes.data);
-           ───────────────────────────────────────────── */
-        setLoading(false);  // remove once real data is fetched
+        let mounted = true;
+
+        const loadModerationData = async () => {
+            try {
+                const [statsRes, reportRes, usersRes, appealsRes] = await Promise.all([
+                    apiClient.get('/admin/moderation/stats'),
+                    apiClient.get('/admin/moderation/reports'),
+                    apiClient.get('/admin/moderation/flagged-users'),
+                    apiClient.get('/admin/moderation/appeals'),
+                ]);
+
+                if (!mounted) return;
+
+                setStats(statsRes || {
+                    pendingReviews: 0,
+                    highPriority: 0,
+                    resolvedToday: 0,
+                    avgResponseTime: '—',
+                });
+                setPendingReports(Array.isArray(reportRes) ? reportRes : []);
+                setFlaggedUsers(Array.isArray(usersRes) ? usersRes : []);
+                setAppeals(Array.isArray(appealsRes) ? appealsRes : []);
+            } catch {
+                if (!mounted) return;
+                setStats({ pendingReviews: 0, highPriority: 0, resolvedToday: 0, avgResponseTime: '—' });
+                setPendingReports([]);
+                setFlaggedUsers([]);
+                setAppeals([]);
+            } finally {
+                if (mounted) setLoading(false);
+            }
+        };
+
+        loadModerationData();
+
+        return () => {
+            mounted = false;
+        };
     }, []);
 
     return {

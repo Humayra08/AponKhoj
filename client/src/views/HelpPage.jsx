@@ -48,6 +48,8 @@ const GUIDES = [
     { icon: Shield, title: 'গোপনীয়তা নীতি', desc: 'আপনার তথ্য কীভাবে সুরক্ষিত রাখা হয়', link: '/privacy', color: 'text-purple-600 bg-purple-100' },
     { icon: Zap, title: 'AI ম্যাচিং ব্যাখ্যা', desc: 'ফেস রিকগনিশন প্রযুক্তির কার্যপদ্ধতি', link: '/ai-match', color: 'text-orange-500 bg-orange-100' },
     { icon: BookOpen, title: 'আইনি সহায়তা', desc: 'নিখোঁজ মামলায় পুলিশি পদক্ষেপ ও আইনি অধিকার', link: '/legal', color: 'text-gray-600 bg-gray-100' },
+];
+
 const QUICK_ACTIONS = [
     { icon: FileText, label: 'নিখোঁজ রিপোর্ট করুন', link: '/report-missing', color: 'bg-primary text-white' },
     { icon: Users, label: 'উদ্ধার তথ্য দিন', link: '/report-found', color: 'bg-secondary text-white' },

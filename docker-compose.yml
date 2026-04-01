@@ -85,8 +85,8 @@ services:
     networks:
       - aponkhoj_network
     volumes:
-      - ./server:/var/www/html                          # live code mount
-      - vendor_data:/var/www/html/vendor                # 👈 preserves vendor from build
+      - ./server:/var/www/html                          
+      - vendor_data:/var/www/html/vendor      
       - ./server/storage/logs:/var/www/html/storage/logs
       - ./server/storage/app:/var/www/html/storage/app
 
@@ -115,5 +115,5 @@ networks:
 volumes:
   db_data:
     driver: local
-  vendor_data:      # 👈 named volume to persist vendor folder
+  vendor_data:      
     driver: local
