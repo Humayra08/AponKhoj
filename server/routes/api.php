@@ -42,6 +42,7 @@ Route::middleware('auth:api')->group(function () {
     Route::get('profile', [ProfileController::class, 'show']);
     Route::put('profile', [ProfileController::class, 'update']);
     Route::patch('profile', [ProfileController::class, 'update']);
+    Route::post('profile/avatar', [ProfileController::class, 'uploadAvatar']);
     Route::get('profile/stats', [ProfileController::class, 'stats']);
 
     // Missing Person Reports Routes

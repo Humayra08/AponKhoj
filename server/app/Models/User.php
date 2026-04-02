@@ -22,6 +22,18 @@ class User extends Authenticatable implements JWTSubject
         'password',
         'phone',
         'district',
+        'avatar_url',
+        'avatar_public_id',
+    ];
+
+    /**
+     * Attributes appended to serialized user payloads.
+     *
+     * @var array<int, string>
+     */
+    protected $appends = [
+        'avatarUrl',
+        'avatarPublicId',
     ];
 
     /**
@@ -42,6 +54,16 @@ class User extends Authenticatable implements JWTSubject
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
+
+    public function getAvatarUrlAttribute()
+    {
+        return $this->attributes['avatar_url'] ?? null;
+    }
+
+    public function getAvatarPublicIdAttribute()
+    {
+        return $this->attributes['avatar_public_id'] ?? null;
+    }
 
     /**
      * Get the identifier that will be stored in the subject claim of the JWT.
