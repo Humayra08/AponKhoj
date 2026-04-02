@@ -1,5 +1,7 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, ArrowRight, Users, MapPin, CheckCircle, AlertTriangle, Heart, Zap } from 'lucide-react';
+import { getMissingReportStats, getPublishedReports } from '../helpers/missingReportService';
 
 const DIVISIONS = ['ঢাকা', 'চট্টগ্রাম', 'রাজশাহী', 'খুলনা', 'বরিশাল', 'সিলেট', 'রংপুর', 'ময়মনসিংহ'];
 
@@ -16,13 +18,58 @@ const avatar = (seed, gender, type = 'missing') => {
     return `https://api.dicebear.com/7.x/${style}/png?seed=${encodeURIComponent(seed)}&size=300&backgroundColor=${bg}`;
 };
 
-const RECENT = [
-    { id: 1, name: 'রহিম উদ্দিন', age: 45, gender: 'male', division: 'ঢাকা', district: 'মিরপুর, ঢাকা', date: '২ দিন আগে', status: 'missing', seed: 'rahim' },
-    { id: 2, name: 'সুমাইয়া বেগম', age: 28, gender: 'female', division: 'চট্টগ্রাম', district: 'হালিশহর, চট্টগ্রাম', date: '৩ দিন আগে', status: 'found', seed: 'sumaiya' },
-    { id: 3, name: 'আনোয়ার হোসেন', age: 60, gender: 'male', division: 'খুলনা', district: 'কয়রা, খুলনা', date: '৫ দিন আগে', status: 'missing', seed: 'anwar' },
-];
+const formatBnNumber = (value) => new Intl.NumberFormat('bn-BD').format(Number(value || 0));
+const formatDateBN = (dateStr) => {
+    if (!dateStr) return '—';
+    const dt = new Date(dateStr);
+    if (Number.isNaN(dt.getTime())) return dateStr;
+
+    return dt.toLocaleDateString('bn-BD', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+    });
+};
+
+const normalizeRecentReport = (report) => ({
+    id: report.id,
+    name: report.name || 'অজ্ঞাত ব্যক্তি',
+    age: report.age,
+    gender: report.gender || 'other',
+    district: report.address ? `${report.address}, ${report.district}` : (report.district || 'অজানা'),
+    date: report.last_seen_date || report.created_at || null,
+    photo_url: report.photo_url || '',
+    seed: `recent-${report.id}`,
+});
 
 const HomePage = () => {
+    const [totalSubmitted, setTotalSubmitted] = useState(0);
+    const [recentReports, setRecentReports] = useState([]);
+    const [recentLoading, setRecentLoading] = useState(true);
+
+    useEffect(() => {
+        const loadHomeData = async () => {
+            const [statsResult, recentResult] = await Promise.all([
+                getMissingReportStats(),
+                getPublishedReports(),
+            ]);
+
+            if (statsResult.success) {
+                setTotalSubmitted(statsResult.totalSubmitted);
+            }
+
+            if (recentResult.success) {
+                setRecentReports((recentResult.reports || []).slice(0, 3).map(normalizeRecentReport));
+            } else {
+                setRecentReports([]);
+            }
+
+            setRecentLoading(false);
+        };
+
+        loadHomeData();
+    }, []);
+
     return (
         <div className="bg-background min-h-screen overflow-x-hidden">
 
@@ -62,7 +109,7 @@ const HomePage = () => {
             <section className="bg-white border-b border-gray-100 py-4 sm:py-6 px-4 shadow-sm">
                 <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-gray-100 gap-4 sm:gap-0">
                     {[
-                        { icon: Search, value: '০', label: 'রিপোর্ট জমা', color: 'text-secondary' },
+                        { icon: Search, value: formatBnNumber(totalSubmitted), label: 'রিপোর্ট জমা', color: 'text-secondary' },
                         { icon: CheckCircle, value: '০', label: 'সফল পুনর্মিলন', color: 'text-accent-teal' },
                         { icon: MapPin, value: '৬৪', label: 'জেলা কভারেজ', color: 'text-primary' },
                     ].map(s => (
@@ -156,18 +203,29 @@ const HomePage = () => {
                     </Link>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                    {RECENT.map(r => (
+                    {recentLoading && [1, 2, 3].map((n) => (
+                        <div key={n} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden animate-pulse">
+                            <div className="h-48 bg-gray-100" />
+                            <div className="p-4 space-y-2">
+                                <div className="h-4 bg-gray-100 rounded w-2/3" />
+                                <div className="h-3 bg-gray-100 rounded w-1/2" />
+                                <div className="h-8 bg-gray-100 rounded-xl mt-3" />
+                            </div>
+                        </div>
+                    ))}
+
+                    {!recentLoading && recentReports.map(r => (
                         <div key={r.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow group flex flex-col h-full">
                             <div className="relative h-48 overflow-hidden bg-gray-50 flex items-center justify-center">
-                                <img src={avatar(r.seed, r.gender, r.status)} alt={r.name} className="h-full w-full object-cover object-top group-hover:scale-105 transition-transform duration-300" />
-                                <span className={`absolute top-2 left-2 text-[10px] font-bold px-2.5 py-1 rounded-full shadow ${r.status === 'missing' ? 'bg-[#ff5a2c] text-white' : 'bg-accent-teal text-white'}`}>
-                                    {r.status === 'missing' ? 'নিখোঁজ' : 'পাওয়া গেছে'}
+                                <img src={r.photo_url || avatar(r.seed, r.gender, 'missing')} alt={r.name} className="h-full w-full object-cover object-top group-hover:scale-105 transition-transform duration-300" />
+                                <span className="absolute top-2 left-2 text-[10px] font-bold px-2.5 py-1 rounded-full shadow bg-emerald-500 text-white">
+                                    অনুমোদিত
                                 </span>
                             </div>
                             <div className="p-4 flex flex-col flex-1">
                                 <div className="flex items-baseline gap-2 mb-2">
                                     <h3 className="font-black text-gray-800 text-base">{r.name}</h3>
-                                    <span className="text-xs text-gray-400">~{r.age} বছর</span>
+                                    <span className="text-xs text-gray-400">~{r.age != null ? formatBnNumber(r.age) : '—'} বছর</span>
                                 </div>
                                 <div className="space-y-1.5 text-xs text-gray-500 mb-4 flex-1">
                                     <div className="flex items-center gap-1.5">
@@ -176,17 +234,23 @@ const HomePage = () => {
                                     </div>
                                     <div className="flex items-center gap-1.5">
                                         <div className="w-[11px] h-[11px] rounded flex items-center justify-center bg-gray-100 flex-shrink-0">
-                                            <span className="text-[8px] font-bold text-gray-400">{r.status === 'missing' ? 'T' : 'D'}</span>
+                                            <span className="text-[8px] font-bold text-gray-400">D</span>
                                         </div>
-                                        <span className="text-gray-400">{r.date}</span>
+                                        <span className="text-gray-400">{formatDateBN(r.date)}</span>
                                     </div>
                                 </div>
-                                <Link to={`/search/${r.id}`} className="flex items-center justify-center gap-1 w-full border border-gray-200 text-gray-600 text-xs py-2 rounded-xl hover:border-primary hover:text-primary transition-colors font-medium">
+                                <Link to={`/emergency/${r.id}`} className="flex items-center justify-center gap-1 w-full border border-gray-200 text-gray-600 text-xs py-2 rounded-xl hover:border-primary hover:text-primary transition-colors font-medium">
                                     বিস্তারিত দেখুন
                                 </Link>
                             </div>
                         </div>
                     ))}
+
+                    {!recentLoading && recentReports.length === 0 && (
+                        <div className="col-span-full text-center py-10 bg-white border border-gray-100 rounded-2xl text-sm text-gray-500">
+                            এখনো কোনো অনুমোদিত রিপোর্ট পাওয়া যায়নি
+                        </div>
+                    )}
                 </div>
             </section>
 

@@ -206,6 +206,21 @@ class ApiClient {
     }
   }
 
+  /**
+   * Get user's dashboard statistics
+   * GET /api/profile/stats
+   * @returns {Promise<Object>} user stats (totalReports, pendingReports, approvedReports, rejectedReports)
+   */
+  async getUserStats() {
+    try {
+      const response = await this.client.get('/profile/stats');
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
   // ─────────────────────────────────────────────────────────────────
 
   handleError(error) {

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use App\Models\MissingReport;
 
 class ProfileController extends Controller
 {
@@ -36,6 +37,31 @@ class ProfileController extends Controller
         return response()->json([
             'message' => 'Profile updated successfully.',
             'user' => $user->fresh(),
+        ]);
+    }
+
+    public function stats(Request $request)
+    {
+        $user = $request->user();
+
+        $totalReports = MissingReport::where('user_id', $user->id)->count();
+        $pendingReports = MissingReport::where('user_id', $user->id)
+            ->where('status', 'pending')
+            ->where('approved', false)
+            ->count();
+        $approvedReports = MissingReport::where('user_id', $user->id)
+            ->where('status', 'published')
+            ->where('approved', true)
+            ->count();
+        $rejectedReports = MissingReport::where('user_id', $user->id)
+            ->where('status', 'rejected')
+            ->count();
+
+        return response()->json([
+            'totalReports' => $totalReports,
+            'pendingReports' => $pendingReports,
+            'approvedReports' => $approvedReports,
+            'rejectedReports' => $rejectedReports,
         ]);
     }
 }

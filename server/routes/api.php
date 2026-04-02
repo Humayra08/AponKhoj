@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\MissingPersonController;
 
 /*
 |--------------------------------------------------------------------------
@@ -41,10 +42,17 @@ Route::middleware('auth:api')->group(function () {
     Route::get('profile', [ProfileController::class, 'show']);
     Route::put('profile', [ProfileController::class, 'update']);
     Route::patch('profile', [ProfileController::class, 'update']);
-    
-    // AponKhoj API Routes
-    // Add your protected API routes here
+    Route::get('profile/stats', [ProfileController::class, 'stats']);
+
+    // Missing Person Reports Routes
+    Route::post('missing-reports', [MissingPersonController::class, 'store']);
+    Route::get('missing-reports/my', [MissingPersonController::class, 'getMyReports']);
 });
+
+// Public missing reports feed
+Route::get('missing-reports/published', [MissingPersonController::class, 'getPublished']);
+Route::get('missing-reports/published/{id}', [MissingPersonController::class, 'getPublishedById']);
+Route::get('missing-reports/stats', [MissingPersonController::class, 'getPublicStats']);
 
 // Admin-only API routes
 Route::middleware(['auth:api', 'admin.only'])->group(function () {
@@ -55,4 +63,9 @@ Route::middleware(['auth:api', 'admin.only'])->group(function () {
     Route::get('admin/moderation/reports', [AdminController::class, 'moderationReports']);
     Route::get('admin/moderation/flagged-users', [AdminController::class, 'moderationFlaggedUsers']);
     Route::get('admin/moderation/appeals', [AdminController::class, 'moderationAppeals']);
+    
+    // Missing Person Reports Admin Routes
+    Route::get('admin/missing-reports/pending', [MissingPersonController::class, 'getPending']);
+    Route::patch('admin/missing-reports/{id}/approve', [MissingPersonController::class, 'approve']);
+    Route::patch('admin/missing-reports/{id}/reject', [MissingPersonController::class, 'reject']);
 });

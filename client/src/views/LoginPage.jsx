@@ -120,10 +120,12 @@ const handleLogin = async (e) => {
                     </button>
                 </form>
 
-                <p className="text-center text-sm text-gray-500 mt-6">
-                    অ্যাকাউন্ট নেই?{' '}
-                    <Link to="/register" className="text-primary font-medium hover:underline">রেজিস্ট্রেশন করুন</Link>
-                </p>
+                {loginType === 'user' && (
+                    <p className="text-center text-sm text-gray-500 mt-6">
+                        অ্যাকাউন্ট নেই?{' '}
+                        <Link to="/register" className="text-primary font-medium hover:underline">রেজিস্ট্রেশন করুন</Link>
+                    </p>
+                )}
             </div>
         </div>
     );

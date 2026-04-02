@@ -2,15 +2,19 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
     FileText, Bell, Users, Clock,
-    Search, MapPin, ChevronRight, Zap, Eye, Trash2,
+    Search, MapPin, ChevronRight, Zap, Eye, X,
     UserCircle2, AlertTriangle, Settings
 } from 'lucide-react';
 import { useAuth } from '../helpers/AuthContext';
+import apiClient from '../api';
+import { getMyMissingReports } from '../helpers/missingReportService';
 
 const formatDateBN = (dateStr) => {
     if (!dateStr) return '—';
 
-    const date = new Date(dateStr);
+    const normalized = String(dateStr).replace(' ', 'T');
+    const date = new Date(normalized);
+    if (Number.isNaN(date.getTime())) return '—';
 
     return date.toLocaleDateString('bn-BD', {
         year: 'numeric',
@@ -19,18 +23,29 @@ const formatDateBN = (dateStr) => {
     });
 };
 
+const formatBnNumber = (value) => new Intl.NumberFormat('bn-BD').format(Number(value || 0));
+
+const formatReportStatusBN = (status) => {
+    const labels = {
+        pending: 'অপেক্ষমাণ',
+        published: 'প্রকাশিত',
+        rejected: 'প্রত্যাখ্যাত',
+    };
+    return labels[status] || status;
+};
+
 // Status Badge 
 const StatusBadge = ({ status }) => {
     const styles = {
         pending: 'bg-yellow-50 text-yellow-600 border-yellow-200',
-        verified: 'bg-teal-50 text-teal-600 border-teal-200',
-        matched: 'bg-purple-50 text-purple-600 border-purple-200',
+        published: 'bg-teal-50 text-teal-600 border-teal-200',
+        rejected: 'bg-red-50 text-red-600 border-red-200',
         closed: 'bg-gray-50 text-gray-500 border-gray-200',
     };
     const labels = {
         pending: 'অপেক্ষমাণ',
-        verified: 'যাচাইকৃত',
-        matched: 'ম্যাচ পাওয়া',
+        published: 'প্রকাশিত',
+        rejected: 'প্রত্যাখ্যাত',
         closed: 'বন্ধ',
     };
     return (
@@ -51,16 +66,33 @@ export default function UserDashboardPage() {
     const [reports, setReports] = useState([]);
     const [notifications, setNotifications] = useState([]);
     const [stats, setStats] = useState(null);
+    const [selectedReport, setSelectedReport] = useState(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const timer = setTimeout(() => {
-            setReports([]);
-            setNotifications([]);
-            setStats(null);
-            setLoading(false);
-        }, 600);
-        return () => clearTimeout(timer);
+        const fetchDashboardData = async () => {
+            try {
+                const [statsData, myReportsData] = await Promise.all([
+                    apiClient.getUserStats(),
+                    getMyMissingReports(),
+                ]);
+
+                setStats(statsData);
+                if (myReportsData.success) {
+                    setReports(myReportsData.reports);
+                } else {
+                    setReports([]);
+                }
+            } catch (error) {
+                console.error('Failed to fetch dashboard data:', error);
+                setStats(null);
+                setReports([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchDashboardData();
     }, []);
 
     if (loading) {
@@ -115,7 +147,9 @@ export default function UserDashboardPage() {
                                 <s.icon size={20} />
                             </div>
                             <div>
-                                <p className="text-xl font-black text-gray-800">{stats?.[s.key] ?? '—'}</p>
+                                <p className="text-xl font-black text-gray-800">
+                                    {stats?.[s.key] != null ? formatBnNumber(stats[s.key]) : '—'}
+                                </p>
                                 <p className="text-[11px] text-gray-400 leading-tight">{s.label}</p>
                             </div>
                         </div>
@@ -132,9 +166,9 @@ export default function UserDashboardPage() {
                         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-50">
                                 <h2 className="font-bold text-gray-800">আমার রিপোর্টসমূহ</h2>
-                                <Link to="/my-reports" className="text-xs text-primary hover:underline flex items-center gap-1">
-                                    সব দেখুন <ChevronRight size={12} />
-                                </Link>
+                                <span className="text-xs text-primary flex items-center gap-1">
+                                    {formatBnNumber(reports.length)} টি <ChevronRight size={12} />
+                                </span>
                             </div>
 
                             {reports.length === 0 ? (
@@ -147,37 +181,38 @@ export default function UserDashboardPage() {
                                 </div>
                             ) : (
                                 <div className="divide-y divide-gray-50">
-                                    {/* TODO: reports will come from API: reports.map(r => ...) */}
                                     {reports.map(r => (
-                                        <div key={r.id} className="flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50/50 transition-colors group">
-                                            <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-black ${r.type === 'missing' ? 'bg-red-50 text-secondary' : 'bg-teal-50 text-teal-600'}`}>
+                                        <button
+                                            key={r.id}
+                                            type="button"
+                                            onClick={() => setSelectedReport(r)}
+                                            className="w-full text-left flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50/50 transition-colors group"
+                                        >
+                                            <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-black ${r.status === 'rejected' ? 'bg-red-50 text-red-600' : r.status === 'pending' ? 'bg-yellow-50 text-yellow-600' : 'bg-teal-50 text-teal-600'}`}>
                                                 {r.name?.[0] || '?'}
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex items-baseline gap-2">
                                                     <p className="text-sm font-bold text-gray-800 truncate">{r.name}</p>
-                                                    <span className="text-xs text-gray-400 flex-shrink-0">~{r.age} বছর</span>
+                                                    <span className="text-xs text-gray-400 flex-shrink-0">~{formatBnNumber(r.age)} বছর</span>
                                                 </div>
                                                 <div className="flex items-center gap-1.5 mt-0.5">
                                                     <MapPin size={10} className="text-gray-300 flex-shrink-0" />
                                                     <span className="text-xs text-gray-400 truncate">{r.district}</span>
                                                     <span className="text-gray-200 text-xs">•</span>
                                                     <Clock size={10} className="text-gray-300 flex-shrink-0" />
-                                                    <span className="text-xs text-gray-400 flex-shrink-0">{r.date}</span>
+                                                    <span className="text-xs text-gray-400 flex-shrink-0">{formatDateBN(r.created_at)}</span>
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-2 flex-shrink-0">
                                                 <StatusBadge status={r.status} />
                                                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <button className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-400 hover:text-primary transition-colors">
+                                                    <span className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-400 hover:text-primary transition-colors">
                                                         <Eye size={13} />
-                                                    </button>
-                                                    <button className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-red-50 text-gray-400 hover:text-secondary transition-colors">
-                                                        <Trash2 size={13} />
-                                                    </button>
+                                                    </span>
                                                 </div>
                                             </div>
-                                        </div>
+                                        </button>
                                     ))}
                                 </div>
                             )}
@@ -286,6 +321,109 @@ export default function UserDashboardPage() {
                     </div>
                 </div>
             </div>
+
+            {selectedReport && (
+                <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+                    <div className="w-full max-w-3xl bg-white rounded-2xl shadow-xl border border-gray-100 max-h-[90vh] overflow-y-auto">
+                        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 sticky top-0 bg-white">
+                            <h3 className="text-lg font-black text-gray-800">রিপোর্ট বিস্তারিত</h3>
+                            <button
+                                type="button"
+                                onClick={() => setSelectedReport(null)}
+                                className="w-8 h-8 rounded-lg hover:bg-gray-100 text-gray-500 flex items-center justify-center"
+                            >
+                                <X size={16} />
+                            </button>
+                        </div>
+
+                        <div className="p-5 space-y-5">
+                            {selectedReport.photo_url && (
+                                <div>
+                                    <p className="text-xs text-gray-400 mb-2">রিপোর্টের ছবি</p>
+                                    <img
+                                        src={selectedReport.photo_url}
+                                        alt={selectedReport.name || 'Report photo'}
+                                        className="w-full max-h-80 object-cover rounded-xl border border-gray-100"
+                                    />
+                                </div>
+                            )}
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <p className="text-xs text-gray-400 mb-1">নাম</p>
+                                    <p className="text-sm font-bold text-gray-800">{selectedReport.name || '—'}</p>
+                                </div>
+                                <div>
+                                    <p className="text-xs text-gray-400 mb-1">স্ট্যাটাস</p>
+                                    <p className="text-sm font-semibold text-gray-700">{formatReportStatusBN(selectedReport.status)}</p>
+                                </div>
+                                <div>
+                                    <p className="text-xs text-gray-400 mb-1">বয়স</p>
+                                    <p className="text-sm font-semibold text-gray-700">{formatBnNumber(selectedReport.age)} বছর</p>
+                                </div>
+                                <div>
+                                    <p className="text-xs text-gray-400 mb-1">লিঙ্গ</p>
+                                    <p className="text-sm font-semibold text-gray-700">{selectedReport.gender || '—'}</p>
+                                </div>
+                                <div>
+                                    <p className="text-xs text-gray-400 mb-1">উচ্চতা</p>
+                                    <p className="text-sm font-semibold text-gray-700">{selectedReport.height || '—'}</p>
+                                </div>
+                                <div>
+                                    <p className="text-xs text-gray-400 mb-1">জমাদানের তারিখ</p>
+                                    <p className="text-sm font-semibold text-gray-700">{formatDateBN(selectedReport.created_at)}</p>
+                                </div>
+                                <div>
+                                    <p className="text-xs text-gray-400 mb-1">সর্বশেষ দেখা</p>
+                                    <p className="text-sm font-semibold text-gray-700">{selectedReport.last_seen_date ? formatDateBN(selectedReport.last_seen_date) : '—'}</p>
+                                </div>
+                                <div>
+                                    <p className="text-xs text-gray-400 mb-1">সর্বশেষ দেখা সময়</p>
+                                    <p className="text-sm font-semibold text-gray-700">{selectedReport.last_seen_time || '—'}</p>
+                                </div>
+                            </div>
+
+                            <div>
+                                <p className="text-xs text-gray-400 mb-1">জেলা</p>
+                                <p className="text-sm text-gray-700">{selectedReport.district || '—'}</p>
+                            </div>
+
+                            <div>
+                                <p className="text-xs text-gray-400 mb-1">ঠিকানা</p>
+                                <p className="text-sm text-gray-700">{selectedReport.address || '—'}</p>
+                            </div>
+
+                            <div>
+                                <p className="text-xs text-gray-400 mb-1">পোশাকের বিবরণ</p>
+                                <p className="text-sm text-gray-700">{selectedReport.clothing_description || '—'}</p>
+                            </div>
+
+                            <div>
+                                <p className="text-xs text-gray-400 mb-1">অতিরিক্ত তথ্য</p>
+                                <p className="text-sm text-gray-700">{selectedReport.additional_info || '—'}</p>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <p className="text-xs text-gray-400 mb-1">যোগাযোগের ব্যক্তি</p>
+                                    <p className="text-sm text-gray-700">{selectedReport.contact_person_name || '—'}</p>
+                                </div>
+                                <div>
+                                    <p className="text-xs text-gray-400 mb-1">যোগাযোগ নম্বর</p>
+                                    <p className="text-sm text-gray-700">{selectedReport.contact_phone || '—'}</p>
+                                </div>
+                            </div>
+
+                            {selectedReport.status === 'rejected' && selectedReport.rejection_reason && (
+                                <div className="bg-red-50 border border-red-100 rounded-xl p-3">
+                                    <p className="text-xs text-red-500 mb-1">প্রত্যাখ্যানের কারণ</p>
+                                    <p className="text-sm text-red-700">{selectedReport.rejection_reason}</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

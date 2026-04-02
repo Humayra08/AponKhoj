@@ -4,10 +4,11 @@ import {
     User, Mail, Phone, MapPin, Lock, Eye, EyeOff,
     Bell, Shield, LogOut, Camera, CheckCircle, AlertTriangle,
     ChevronRight, Settings, Save, ArrowLeft, Loader2,
-    FileText, Key, Trash2, HelpCircle
+    FileText, Key, Trash2, HelpCircle, Clock, X
 } from 'lucide-react';
 import { useAuth } from '../helpers/AuthContext';
 import apiClient from '../api';
+import { getMyMissingReports } from '../helpers/missingReportService';
 
 /* ─────── reusable input ─────── */
 const Field = ({ label, icon: Icon, error, children }) => (
@@ -24,6 +25,36 @@ const Field = ({ label, icon: Icon, error, children }) => (
 const inputCls = (hasIcon = true, hasError = false) =>
     `w-full ${hasIcon ? 'pl-10' : 'pl-3'} pr-4 py-2.5 border ${hasError ? 'border-red-400' : 'border-gray-200'} 
      rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all bg-white`;
+
+const formatDateBN = (dateStr) => {
+    if (!dateStr) return '—';
+    const normalized = String(dateStr).replace(' ', 'T');
+    const date = new Date(normalized);
+    if (Number.isNaN(date.getTime())) return '—';
+
+    return date.toLocaleDateString('bn-BD', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+    });
+};
+
+const formatBnNumber = (value) => new Intl.NumberFormat('bn-BD').format(Number(value || 0));
+
+const reportStatusStyles = {
+    pending: 'bg-yellow-50 text-yellow-600 border-yellow-200',
+    published: 'bg-teal-50 text-teal-600 border-teal-200',
+    rejected: 'bg-red-50 text-red-600 border-red-200',
+};
+
+const formatReportStatusBN = (status) => {
+    const labels = {
+        pending: 'অপেক্ষমাণ',
+        published: 'প্রকাশিত',
+        rejected: 'প্রত্যাখ্যাত',
+    };
+    return labels[status] || status;
+};
 
 /* ─────── avatar initials ─────── */
 const Avatar = ({ user, size = 'lg' }) => {
@@ -374,21 +405,201 @@ function SecurityTab() {
    TAB: My Reports
 ═══════════════════════════════════════════ */
 function MyReportsTab() {
+    const [reports, setReports] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [selectedReport, setSelectedReport] = useState(null);
+
+    useEffect(() => {
+        const fetchMyReports = async () => {
+            try {
+                const response = await getMyMissingReports();
+                setReports(response.success ? response.reports : []);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchMyReports();
+    }, []);
+
+    if (loading) {
+        return (
+            <div>
+                <h2 className="text-xl font-black text-gray-800 mb-1">আমার রিপোর্ট</h2>
+                <p className="text-sm text-gray-400 mb-7">আপনার জমা দেওয়া সব রিপোর্ট এখানে দেখুন</p>
+
+                <div className="space-y-3">
+                    {[1, 2, 3].map((i) => (
+                        <div key={i} className="animate-pulse h-16 bg-gray-50 rounded-xl border border-gray-100" />
+                    ))}
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div>
             <h2 className="text-xl font-black text-gray-800 mb-1">আমার রিপোর্ট</h2>
             <p className="text-sm text-gray-400 mb-7">আপনার জমা দেওয়া সব রিপোর্ট এখানে দেখুন</p>
 
-            <div className="text-center py-16 bg-gray-50 rounded-2xl border border-gray-100">
-                <FileText size={36} className="text-gray-200 mx-auto mb-3" />
-                <p className="text-sm font-semibold text-gray-500">এখনো কোনো রিপোর্ট নেই</p>
-                <p className="text-xs text-gray-400 mt-1 mb-5">নিচের বাটন থেকে প্রথম রিপোর্ট জমা দিন</p>
-                <Link to="/report/missing"
-                    className="inline-flex items-center gap-2 bg-primary text-white text-xs font-bold
+            {reports.length === 0 ? (
+                <div className="text-center py-16 bg-gray-50 rounded-2xl border border-gray-100">
+                    <FileText size={36} className="text-gray-200 mx-auto mb-3" />
+                    <p className="text-sm font-semibold text-gray-500">এখনো কোনো রিপোর্ট নেই</p>
+                    <p className="text-xs text-gray-400 mt-1 mb-5">নিচের বাটন থেকে প্রথম রিপোর্ট জমা দিন</p>
+                    <Link to="/report-missing"
+                        className="inline-flex items-center gap-2 bg-primary text-white text-xs font-bold
                                px-5 py-2.5 rounded-xl hover:bg-primary-dark transition-colors shadow-sm">
-                    + নিখোঁজ রিপোর্ট করুন
-                </Link>
-            </div>
+                        + নিখোঁজ রিপোর্ট করুন
+                    </Link>
+                </div>
+            ) : (
+                <div className="border border-gray-100 rounded-2xl overflow-hidden">
+                    <div className="px-4 py-3 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
+                        <p className="text-sm font-bold text-gray-700">মোট রিপোর্ট</p>
+                        <p className="text-sm font-black text-primary">{formatBnNumber(reports.length)} টি</p>
+                    </div>
+
+                    <div className="divide-y divide-gray-50">
+                        {reports.map((report) => (
+                            <button
+                                key={report.id}
+                                type="button"
+                                onClick={() => setSelectedReport(report)}
+                                className="w-full text-left px-4 py-3.5 hover:bg-gray-50 transition-colors"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-black ${report.status === 'rejected' ? 'bg-red-50 text-red-600' : report.status === 'pending' ? 'bg-yellow-50 text-yellow-600' : 'bg-teal-50 text-teal-600'}`}>
+                                        {report.name?.[0] || '?'}
+                                    </div>
+
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2">
+                                            <p className="text-sm font-bold text-gray-800 truncate">{report.name || '—'}</p>
+                                            <span className="text-xs text-gray-400">~{formatBnNumber(report.age)} বছর</span>
+                                        </div>
+
+                                        <div className="flex items-center gap-2 mt-1 text-xs text-gray-400">
+                                            <MapPin size={11} className="flex-shrink-0" />
+                                            <span className="truncate">{report.district || '—'}</span>
+                                            <span>•</span>
+                                            <Clock size={11} className="flex-shrink-0" />
+                                            <span>{formatDateBN(report.created_at)}</span>
+                                        </div>
+                                    </div>
+
+                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${reportStatusStyles[report.status] || 'bg-gray-50 text-gray-500 border-gray-200'}`}>
+                                        {formatReportStatusBN(report.status)}
+                                    </span>
+                                </div>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {selectedReport && (
+                <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+                    <div className="w-full max-w-3xl bg-white rounded-2xl shadow-xl border border-gray-100 max-h-[90vh] overflow-y-auto">
+                        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 sticky top-0 bg-white">
+                            <h3 className="text-lg font-black text-gray-800">রিপোর্ট বিস্তারিত</h3>
+                            <button
+                                type="button"
+                                onClick={() => setSelectedReport(null)}
+                                className="w-8 h-8 rounded-lg hover:bg-gray-100 text-gray-500 flex items-center justify-center"
+                            >
+                                <X size={16} />
+                            </button>
+                        </div>
+
+                        <div className="p-5 space-y-5">
+                            {selectedReport.photo_url && (
+                                <div>
+                                    <p className="text-xs text-gray-400 mb-2">রিপোর্টের ছবি</p>
+                                    <img
+                                        src={selectedReport.photo_url}
+                                        alt={selectedReport.name || 'Report photo'}
+                                        className="w-full max-h-80 object-cover rounded-xl border border-gray-100"
+                                    />
+                                </div>
+                            )}
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <p className="text-xs text-gray-400 mb-1">নাম</p>
+                                    <p className="text-sm font-bold text-gray-800">{selectedReport.name || '—'}</p>
+                                </div>
+                                <div>
+                                    <p className="text-xs text-gray-400 mb-1">স্ট্যাটাস</p>
+                                    <p className="text-sm font-semibold text-gray-700">{formatReportStatusBN(selectedReport.status)}</p>
+                                </div>
+                                <div>
+                                    <p className="text-xs text-gray-400 mb-1">বয়স</p>
+                                    <p className="text-sm font-semibold text-gray-700">{formatBnNumber(selectedReport.age)} বছর</p>
+                                </div>
+                                <div>
+                                    <p className="text-xs text-gray-400 mb-1">লিঙ্গ</p>
+                                    <p className="text-sm font-semibold text-gray-700">{selectedReport.gender || '—'}</p>
+                                </div>
+                                <div>
+                                    <p className="text-xs text-gray-400 mb-1">উচ্চতা</p>
+                                    <p className="text-sm font-semibold text-gray-700">{selectedReport.height || '—'}</p>
+                                </div>
+                                <div>
+                                    <p className="text-xs text-gray-400 mb-1">জমাদানের তারিখ</p>
+                                    <p className="text-sm font-semibold text-gray-700">{formatDateBN(selectedReport.created_at)}</p>
+                                </div>
+                                <div>
+                                    <p className="text-xs text-gray-400 mb-1">সর্বশেষ দেখা</p>
+                                    <p className="text-sm font-semibold text-gray-700">{selectedReport.last_seen_date ? formatDateBN(selectedReport.last_seen_date) : '—'}</p>
+                                </div>
+                                <div>
+                                    <p className="text-xs text-gray-400 mb-1">সর্বশেষ দেখা সময়</p>
+                                    <p className="text-sm font-semibold text-gray-700">{selectedReport.last_seen_time || '—'}</p>
+                                </div>
+                            </div>
+
+                            <div>
+                                <p className="text-xs text-gray-400 mb-1">জেলা</p>
+                                <p className="text-sm text-gray-700">{selectedReport.district || '—'}</p>
+                            </div>
+
+                            <div>
+                                <p className="text-xs text-gray-400 mb-1">ঠিকানা</p>
+                                <p className="text-sm text-gray-700">{selectedReport.address || '—'}</p>
+                            </div>
+
+                            <div>
+                                <p className="text-xs text-gray-400 mb-1">পোশাকের বিবরণ</p>
+                                <p className="text-sm text-gray-700">{selectedReport.clothing_description || '—'}</p>
+                            </div>
+
+                            <div>
+                                <p className="text-xs text-gray-400 mb-1">অতিরিক্ত তথ্য</p>
+                                <p className="text-sm text-gray-700">{selectedReport.additional_info || '—'}</p>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <p className="text-xs text-gray-400 mb-1">যোগাযোগের ব্যক্তি</p>
+                                    <p className="text-sm text-gray-700">{selectedReport.contact_person_name || '—'}</p>
+                                </div>
+                                <div>
+                                    <p className="text-xs text-gray-400 mb-1">যোগাযোগ নম্বর</p>
+                                    <p className="text-sm text-gray-700">{selectedReport.contact_phone || '—'}</p>
+                                </div>
+                            </div>
+
+                            {selectedReport.status === 'rejected' && selectedReport.rejection_reason && (
+                                <div className="bg-red-50 border border-red-100 rounded-xl p-3">
+                                    <p className="text-xs text-red-500 mb-1">প্রত্যাখ্যানের কারণ</p>
+                                    <p className="text-sm text-red-700">{selectedReport.rejection_reason}</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
@@ -598,7 +809,7 @@ export default function UserProfilePage() {
                                            shadow-sm transition-all">
                                 <Settings size={15} /> ড্যাশবোর্ড
                             </Link>
-                            <Link to="/report/missing"
+                            <Link to="/report-missing"
                                 className="flex items-center gap-2 bg-white border border-gray-100 rounded-2xl
                                            p-4 text-sm font-semibold text-gray-700 hover:border-secondary hover:text-secondary
                                            shadow-sm transition-all">

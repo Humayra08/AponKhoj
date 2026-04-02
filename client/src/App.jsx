@@ -28,6 +28,7 @@ import UserDashboardPage from './views/UserDashboardPage';
 import LegalAidPage from './views/LegalAidPage';
 import PrivacyPage from './views/PrivacyPage';
 import ContactPage from './views/ContactPage';
+import EmergencyDetailsPage from './views/EmergencyDetailsPage';
 
 function AppShell() {
   const { pathname } = useLocation();
@@ -58,6 +59,7 @@ function AppShell() {
           <Route path="/profile" element={<ProtectedRoute><UserProfilePage /></ProtectedRoute>} />
           <Route path="/report-found" element={<ReportFoundPage />} />
           <Route path="/search" element={<SearchPage />} />
+          <Route path="/emergency/:id" element={<EmergencyDetailsPage />} />
           <Route path="/legal-aid" element={<LegalAidPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/contact" element={<ContactPage />} />

@@ -11,6 +11,11 @@ import { AdminSidebar } from './AdminDashboardPage';
 import { useAuth } from '../helpers/AuthContext';
 import AdminNavbar from '../Components/AdminNavbar';
 import apiClient from '../api';
+import {
+    approveMissingReport,
+    getPendingMissingReports,
+    rejectMissingReport,
+} from '../helpers/missingReportService';
 
 /* ══════════════════════════════════════════
    DATA HOOK — wire up API calls here
@@ -49,20 +54,27 @@ function useModerationData() {
             try {
                 const [statsRes, reportRes, usersRes, appealsRes] = await Promise.all([
                     apiClient.get('/admin/moderation/stats'),
-                    apiClient.get('/admin/moderation/reports'),
+                    getPendingMissingReports(),
                     apiClient.get('/admin/moderation/flagged-users'),
                     apiClient.get('/admin/moderation/appeals'),
                 ]);
 
                 if (!mounted) return;
 
-                setStats(statsRes || {
-                    pendingReviews: 0,
-                    highPriority: 0,
-                    resolvedToday: 0,
-                    avgResponseTime: '—',
+                const pendingMissingReports = reportRes?.reports ?? [];
+                const highPriorityMissingReports = pendingMissingReports.filter(item => item.priority === 'high').length;
+
+                setStats({
+                    ...(statsRes || {
+                        pendingReviews: 0,
+                        highPriority: 0,
+                        resolvedToday: 0,
+                        avgResponseTime: '—',
+                    }),
+                    pendingReviews: pendingMissingReports.length,
+                    highPriority: highPriorityMissingReports,
                 });
-                setPendingReports(Array.isArray(reportRes) ? reportRes : []);
+                setPendingReports(pendingMissingReports);
                 setFlaggedUsers(Array.isArray(usersRes) ? usersRes : []);
                 setAppeals(Array.isArray(appealsRes) ? appealsRes : []);
             } catch {
@@ -370,7 +382,7 @@ function QueueTable({ items, onReview, loading, emptyLabel }) {
    MAIN PAGE
 ══════════════════════════════════════════ */
 const TABS = [
-    { id: 'reports', label: 'অপেক্ষমাণ রিপোর্ট', icon: FileText, emptyLabel: 'কোনো অপেক্ষমাণ রিপোর্ট নেই' },
+    { id: 'reports', label: 'মিসিং রিপোর্ট', icon: FileText, emptyLabel: 'কোনো অপেক্ষমাণ মিসিং রিপোর্ট নেই' },
     { id: 'users', label: 'ফ্ল্যাগড ব্যবহারকারী', icon: User, emptyLabel: 'কোনো ফ্ল্যাগড ব্যবহারকারী নেই' },
     { id: 'appeals', label: 'আপিল', icon: MessageSquare, emptyLabel: 'কোনো আপিল নেই' },
 ];
@@ -386,6 +398,7 @@ export default function AdminModerationPage() {
     const [search, setSearch] = useState('');
     const [priority, setPriority] = useState('');
     const [status, setStatus] = useState('');
+    const [actionLoading, setActionLoading] = useState(false);
 
     const data = useModerationData();
     const { loading, stats, pendingReports, setPendingReports, flaggedUsers, setFlaggedUsers, appeals, setAppeals } = data;
@@ -397,18 +410,44 @@ export default function AdminModerationPage() {
 
     /* apply filters */
     const filtered = rawQueue.filter(item => {
-        const matchSearch = !search || item.title?.toLowerCase().includes(search.toLowerCase()) || String(item.id).includes(search);
+        const searchText = `${item.title ?? ''} ${item.submittedBy ?? ''} ${item.address ?? ''} ${item.district ?? ''}`.toLowerCase();
+        const matchSearch = !search || searchText.includes(search.toLowerCase()) || String(item.id).includes(search);
         const matchPriority = !priority || item.priority === priority;
         const matchStatus = !status || item.status === status;
         return matchSearch && matchPriority && matchStatus;
     });
 
     /* handle moderation action */
-    const handleAction = (id, action, note) => {
-        /* TODO: call API — e.g. apiClient.post(`/admin/moderation/${id}/${action}`, { note }) */
-        const setter = setterMap[activeTab];
-        setter(prev => prev.filter(item => item.id !== id));
-        setSelectedItem(null);
+    const handleAction = async (id, action, note) => {
+        if (activeTab !== 'reports') {
+            const setter = setterMap[activeTab];
+            setter(prev => prev.filter(item => item.id !== id));
+            setSelectedItem(null);
+            return;
+        }
+
+        if (action === 'reject' && !note.trim()) {
+            return;
+        }
+
+        setActionLoading(true);
+
+        try {
+            const result = action === 'approve'
+                ? await approveMissingReport(id)
+                : await rejectMissingReport(id, note);
+
+            if (result.success) {
+                setPendingReports(prev => prev.filter(item => item.id !== id));
+                setStats(prev => ({
+                    ...prev,
+                    pendingReviews: Math.max((prev.pendingReviews || 0) - 1, 0),
+                }));
+                setSelectedItem(null);
+            }
+        } finally {
+            setActionLoading(false);
+        }
     };
 
     return (
@@ -446,7 +485,7 @@ export default function AdminModerationPage() {
                     <div className="flex items-center justify-between mb-5">
                         <div>
                             <h1 className="text-xl font-black text-gray-800">মডারেশন প্যানেল</h1>
-                            <p className="text-xs text-gray-400 mt-0.5">রিপোর্ট, ব্যবহারকারী ফ্ল্যাগ এবং আপিল পর্যালোচনা করুন</p>
+                            <p className="text-xs text-gray-400 mt-0.5">মিসিং রিপোর্ট, ব্যবহারকারী ফ্ল্যাগ এবং আপিল পর্যালোচনা করুন</p>
                         </div>
                         <button onClick={() => navigate('/admin/dashboard')}
                             className="text-xs text-gray-500 hover:text-red-500 font-semibold transition-colors hidden lg:block">
@@ -495,7 +534,7 @@ export default function AdminModerationPage() {
                         <QueueTable
                             items={filtered}
                             onReview={setSelectedItem}
-                            loading={loading}
+                            loading={loading || actionLoading}
                             emptyLabel={TABS.find(t => t.id === activeTab)?.emptyLabel} />
                     </div>
                 </main>
