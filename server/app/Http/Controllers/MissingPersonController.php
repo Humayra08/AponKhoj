@@ -155,6 +155,123 @@ class MissingPersonController extends Controller
     }
 
     /**
+     * Get a single published missing report by id
+     *
+     * GET /api/missing-reports/published/{id}
+     */
+    public function getPublishedById($id)
+    {
+        try {
+            $report = MissingReport::where('id', $id)
+                ->where('approved', true)
+                ->where('status', 'published')
+                ->first();
+
+            if (!$report) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Report not found',
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'report' => [
+                    'id' => $report->id,
+                    'name' => $report->name,
+                    'age' => $report->age,
+                    'gender' => $report->gender,
+                    'height' => $report->height,
+                    'photo_url' => $report->photo_url,
+                    'last_seen_date' => optional($report->last_seen_date)->format('Y-m-d'),
+                    'last_seen_time' => $report->last_seen_time,
+                    'district' => $report->district,
+                    'address' => $report->address,
+                    'clothing_description' => $report->clothing_description,
+                    'additional_info' => $report->additional_info,
+                    'contact_person_name' => $report->contact_person_name,
+                    'contact_phone' => $report->contact_phone,
+                    'created_at' => optional($report->created_at)->format('Y-m-d H:i:s'),
+                ],
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error fetching report details: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Get public missing report stats
+     *
+     * GET /api/missing-reports/stats
+     */
+    public function getPublicStats()
+    {
+        try {
+            $totalSubmitted = MissingReport::count();
+
+            return response()->json([
+                'success' => true,
+                'total_submitted' => $totalSubmitted,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error fetching report stats: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Get authenticated user's submitted missing reports
+     *
+     * GET /api/missing-reports/my
+     */
+    public function getMyReports(Request $request)
+    {
+        try {
+            $reports = MissingReport::where('user_id', $request->user()->id)
+                ->latest('created_at')
+                ->get()
+                ->map(function ($report) {
+                    return [
+                        'id' => $report->id,
+                        'name' => $report->name,
+                        'age' => $report->age,
+                        'gender' => $report->gender,
+                        'height' => $report->height,
+                        'status' => $report->status,
+                        'approved' => $report->approved,
+                        'photo_url' => $report->photo_url,
+                        'last_seen_date' => optional($report->last_seen_date)->format('Y-m-d'),
+                        'last_seen_time' => $report->last_seen_time,
+                        'district' => $report->district,
+                        'address' => $report->address,
+                        'clothing_description' => $report->clothing_description,
+                        'additional_info' => $report->additional_info,
+                        'contact_person_name' => $report->contact_person_name,
+                        'contact_phone' => $report->contact_phone,
+                        'rejection_reason' => $report->rejection_reason,
+                        'created_at' => optional($report->created_at)->format('Y-m-d H:i:s'),
+                    ];
+                });
+
+            return response()->json([
+                'success' => true,
+                'count' => $reports->count(),
+                'reports' => $reports,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error fetching your reports: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
      * Get pending reports for admin review
      * 
      * GET /api/admin/missing-reports/pending

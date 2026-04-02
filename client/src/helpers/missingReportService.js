@@ -92,6 +92,73 @@ export const getPublishedReports = async () => {
 };
 
 /**
+ * Get single published report by id
+ * @param {number|string} id
+ * @returns {Promise<{success: boolean, report: Object|null, message?: string}>}
+ */
+export const getPublishedReportById = async (id) => {
+  try {
+    const response = await apiClient.get(`/missing-reports/published/${id}`);
+
+    return {
+      success: true,
+      report: response.report || null,
+    };
+  } catch (error) {
+    console.error('Fetch single report error:', error);
+    return {
+      success: false,
+      report: null,
+      message: error.response?.data?.message || error.message || 'Failed to fetch report details',
+    };
+  }
+};
+
+/**
+ * Get public missing report stats
+ * @returns {Promise<{success: boolean, totalSubmitted: number}>}
+ */
+export const getMissingReportStats = async () => {
+  try {
+    const response = await apiClient.get('/missing-reports/stats');
+
+    return {
+      success: true,
+      totalSubmitted: Number(response.total_submitted || 0),
+    };
+  } catch (error) {
+    console.error('Fetch report stats error:', error);
+    return {
+      success: false,
+      totalSubmitted: 0,
+      message: error.message || 'Failed to fetch report stats',
+    };
+  }
+};
+
+/**
+ * Get authenticated user's submitted missing reports
+ * @returns {Promise<{success: boolean, reports: Array}>}
+ */
+export const getMyMissingReports = async () => {
+  try {
+    const response = await apiClient.get('/missing-reports/my');
+
+    return {
+      success: true,
+      reports: response.reports || [],
+    };
+  } catch (error) {
+    console.error('Fetch my reports error:', error);
+    return {
+      success: false,
+      reports: [],
+      message: error.message || 'Failed to fetch your reports',
+    };
+  }
+};
+
+/**
  * Get all pending missing reports for admin moderation
  * @returns {Promise<{success: boolean, reports: Array}>}
  */

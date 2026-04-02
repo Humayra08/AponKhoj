@@ -42,11 +42,17 @@ Route::middleware('auth:api')->group(function () {
     Route::get('profile', [ProfileController::class, 'show']);
     Route::put('profile', [ProfileController::class, 'update']);
     Route::patch('profile', [ProfileController::class, 'update']);
-    
+    Route::get('profile/stats', [ProfileController::class, 'stats']);
+
     // Missing Person Reports Routes
     Route::post('missing-reports', [MissingPersonController::class, 'store']);
-    Route::get('missing-reports/published', [MissingPersonController::class, 'getPublished']);
+    Route::get('missing-reports/my', [MissingPersonController::class, 'getMyReports']);
 });
+
+// Public missing reports feed
+Route::get('missing-reports/published', [MissingPersonController::class, 'getPublished']);
+Route::get('missing-reports/published/{id}', [MissingPersonController::class, 'getPublishedById']);
+Route::get('missing-reports/stats', [MissingPersonController::class, 'getPublicStats']);
 
 // Admin-only API routes
 Route::middleware(['auth:api', 'admin.only'])->group(function () {
