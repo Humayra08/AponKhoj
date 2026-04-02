@@ -188,15 +188,15 @@ class ApiClient {
 
   /**
    * Upload avatar image
-   * PATCH /api/profile — sends as multipart/form-data
+   * POST /api/profile/avatar — sends as multipart/form-data
    * @param {File} file - image file
    * @returns {Promise<Object>} updated profile with new avatarUrl
    */
   async uploadAvatar(file) {
     try {
       const formData = new FormData();
-      formData.append('avatar', file);
-      const response = await this.client.patch('/profile', formData, {
+      formData.append('image', file);
+      const response = await this.client.post('/profile/avatar', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       return response.data;

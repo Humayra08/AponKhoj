@@ -9,6 +9,8 @@ CREATE TABLE IF NOT EXISTS `users` (
     `password` VARCHAR(255) NOT NULL,
     `phone` VARCHAR(20) NULL,
     `district` VARCHAR(100) NULL,
+    `avatar_url` VARCHAR(2048) NULL,
+    `avatar_public_id` VARCHAR(255) NULL,
     `remember_token` VARCHAR(100) NULL,
     `created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
