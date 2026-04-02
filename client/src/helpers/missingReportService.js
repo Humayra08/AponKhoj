@@ -90,3 +90,72 @@ export const getPublishedReports = async () => {
     };
   }
 };
+
+/**
+ * Get all pending missing reports for admin moderation
+ * @returns {Promise<{success: boolean, reports: Array}>}
+ */
+export const getPendingMissingReports = async () => {
+  try {
+    const response = await apiClient.get('/admin/missing-reports/pending');
+
+    return {
+      success: true,
+      reports: Array.isArray(response) ? response : response.reports || [],
+    };
+  } catch (error) {
+    console.error('Fetch pending reports error:', error);
+    return {
+      success: false,
+      reports: [],
+      message: error.message || 'Failed to fetch pending reports',
+    };
+  }
+};
+
+/**
+ * Approve a pending missing report
+ * @param {number|string} id
+ * @returns {Promise<{success: boolean, message: string}>}
+ */
+export const approveMissingReport = async (id) => {
+  try {
+    const response = await apiClient.patch(`/admin/missing-reports/${id}/approve`);
+
+    return {
+      success: true,
+      message: response.message || 'Report approved',
+      report: response.report,
+    };
+  } catch (error) {
+    console.error('Approve report error:', error);
+    return {
+      success: false,
+      message: error.response?.data?.message || error.message || 'Failed to approve report',
+    };
+  }
+};
+
+/**
+ * Reject a pending missing report
+ * @param {number|string} id
+ * @param {string} reason
+ * @returns {Promise<{success: boolean, message: string}>}
+ */
+export const rejectMissingReport = async (id, reason) => {
+  try {
+    const response = await apiClient.patch(`/admin/missing-reports/${id}/reject`, { reason });
+
+    return {
+      success: true,
+      message: response.message || 'Report rejected',
+      report: response.report,
+    };
+  } catch (error) {
+    console.error('Reject report error:', error);
+    return {
+      success: false,
+      message: error.response?.data?.message || error.message || 'Failed to reject report',
+    };
+  }
+};
