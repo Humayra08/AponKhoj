@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Services\CloudinaryService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use App\Models\MissingReport;
 
@@ -37,9 +38,14 @@ class ProfileController extends Controller
             ],
             'phone' => 'sometimes|nullable|string|max:20',
             'district' => 'sometimes|nullable|string|max:100',
+            'current_password' => 'sometimes|required_with:password|string',
+            'password' => 'sometimes|required_with:current_password|string|min:8|confirmed|different:current_password',
+            'password_confirmation' => 'sometimes|required_with:password|string|min:8',
             'avatar' => 'sometimes|nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
             'image' => 'sometimes|nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
         ]);
+
+        
 
         if ($request->hasFile('avatar') || $request->hasFile('image')) {
             $avatarFile = $request->file('image') ?: $request->file('avatar');
@@ -64,6 +70,7 @@ class ProfileController extends Controller
         }
 
         $user->fill($validated);
+        
         $user->save();
 
         return response()->json([
