@@ -23,10 +23,8 @@ function useAdminData() {
     const [stats, setStats] = useState({
         totalReports: 0,
         activeMissing: 0,
-        reunions: 0,
         users: 0,
         newUsersWeek: 0,
-        successRate: 0,
     });
 
     /* ── bar chart: { label: string, value: number }[] ── */
@@ -62,10 +60,8 @@ function useAdminData() {
                 setStats(statsRes?.stats || {
                     totalReports: 0,
                     activeMissing: 0,
-                    reunions: 0,
                     users: 0,
                     newUsersWeek: 0,
-                    successRate: 0,
                 });
                 setMonthlyData(statsRes?.monthlyData || []);
                 setStatusData(statsRes?.statusData || []);
@@ -75,7 +71,7 @@ function useAdminData() {
                 setReports(Array.isArray(reportsRes) ? reportsRes : []);
             } catch {
                 if (!mounted) return;
-                setStats({ totalReports: 0, activeMissing: 0, reunions: 0, users: 0, newUsersWeek: 0, successRate: 0 });
+                setStats({ totalReports: 0, activeMissing: 0, users: 0, newUsersWeek: 0 });
                 setMonthlyData([]);
                 setStatusData([]);
                 setDivisions([]);
@@ -214,8 +210,6 @@ export function AdminSidebar({ active, onNav, collapsed, onToggle }) {
 
     const NAV = [
         { id: 'overview', label: 'ওভারভিউ', icon: LayoutDashboard },
-        { id: 'reports', label: 'রিপোর্ট ব্যবস্থাপনা', icon: FileText },
-        { id: 'users', label: 'ব্যবহারকারী', icon: Users },
         { id: 'analytics', label: 'বিশ্লেষণ', icon: BarChart2 },
     ];
 
@@ -338,11 +332,9 @@ function OverviewSection({ data }) {
             </div>
 
             {/* KPI cards */}
-            <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 xl:grid-cols-2 gap-4">
                 <KpiCard title="মোট রিপোর্ট" value={stats.totalReports} sub="সর্বকালীন" color="bg-blue-50 text-blue-500" icon={FileText} />
                 <KpiCard title="সক্রিয় নিখোঁজ" value={stats.activeMissing} sub={stats.totalReports ? `মোটের ${((stats.activeMissing / stats.totalReports) * 100).toFixed(1)}%` : '—'} color="bg-amber-50 text-amber-500" icon={AlertTriangle} />
-                <KpiCard title="সফল পুনর্মিলন" value={stats.reunions} sub={`সাফল্যের হার ${stats.successRate}%`} color="bg-emerald-50 text-emerald-500" icon={CheckCircle} />
-                <KpiCard title="নিবন্ধিত ব্যবহারকারী" value={stats.users} sub={`এ সপ্তাহে +${stats.newUsersWeek}`} color="bg-purple-50 text-purple-500" icon={Users} />
             </div>
 
             {/* Charts row */}
@@ -720,7 +712,7 @@ function AnalyticsSection({ data }) {
     );
 }
 
-/* ─────────────────────────────────────────────────────────────
+/* ──────────────────────────���──────────────────────────────────
    MAIN PAGE
 ───────────────────────────────────────────────────────────── */
 const SECTIONS = {
