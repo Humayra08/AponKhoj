@@ -45,7 +45,14 @@ class ProfileController extends Controller
             'image' => 'sometimes|nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
         ]);
 
-        
+        if (isset($validated['password']) && !Hash::check($validated['current_password'] ?? '', $user->password)) {
+            return response()->json([
+                'message' => 'Current password is incorrect.',
+            ], 422);
+        }
+
+        $newPassword = $validated['password'] ?? null;
+        unset($validated['current_password'], $validated['password'], $validated['password_confirmation']);
 
         if ($request->hasFile('avatar') || $request->hasFile('image')) {
             $avatarFile = $request->file('image') ?: $request->file('avatar');
@@ -70,7 +77,8 @@ class ProfileController extends Controller
         }
 
         $user->fill($validated);
-        
+
+
         $user->save();
 
         return response()->json([
