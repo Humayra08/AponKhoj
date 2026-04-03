@@ -1,9 +1,8 @@
 <?php
-
 namespace App\Http\Controllers\Admin;
-
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\MissingReport;
 use App\Models\VerificationCode;
 use Illuminate\Support\Carbon;
 
@@ -11,15 +10,23 @@ class AdminController extends Controller
 {
     public function stats()
     {
-        $totalReports = VerificationCode::count();
-        $closedReports = VerificationCode::where('verified', true)->count();
-        $activeMissing = max($totalReports - $closedReports, 0);
+        // Total reports = all approved/published reports (visible to public)
+        $totalReports = MissingReport::where('approved', 1)->count();
+        
+        // Active Missing = approved reports where person is STILL missing (not found/closed)
+        $activeMissing = MissingReport::where('approved', 1)
+                                      ->where('status', '!=', 'found')
+                                      ->where('status', '!=', 'closed')
+                                      ->count();
+        
         $users = User::count();
         $newUsersWeek = User::where('created_at', '>=', now()->subDays(7))->count();
-        $successRate = $totalReports > 0 ? round(($closedReports / $totalReports) * 100, 1) : 0;
+        
+        // Success rate = (Found/Closed) / Total published
+        $successRate = $totalReports > 0 ? round((($totalReports - $activeMissing) / $totalReports) * 100, 1) : 0;
 
         $monthlyData = $this->monthlyReportSeries();
-        $statusData = $this->statusDistribution($totalReports, $closedReports, $activeMissing);
+        $statusData = $this->statusDistribution($totalReports, $activeMissing);
         $divisions = $this->divisionDistribution();
         $recentUsers = $this->recentUsers();
         $activity = $this->activityFeed();
@@ -28,7 +35,6 @@ class AdminController extends Controller
             'stats' => [
                 'totalReports' => $totalReports,
                 'activeMissing' => $activeMissing,
-                'reunions' => $closedReports,
                 'users' => $users,
                 'newUsersWeek' => $newUsersWeek,
                 'successRate' => $successRate,
@@ -43,17 +49,18 @@ class AdminController extends Controller
 
     public function recentReports()
     {
-        $reports = VerificationCode::query()
+        $reports = MissingReport::query()
+            ->with('user')
             ->latest('created_at')
             ->limit(10)
             ->get()
             ->map(function ($record) {
                 return [
                     'id' => $record->id,
-                    'name' => $record->email,
-                    'age' => '—',
-                    'division' => 'N/A',
-                    'status' => $record->verified ? 'closed' : 'pending',
+                    'name' => $record->name,
+                    'age' => $record->age ?? '—',
+                    'division' => $record->district ?? 'N/A',
+                    'status' => $record->approved ? 'approved' : 'pending',
                     'date' => optional($record->created_at)->format('Y-m-d'),
                 ];
             })
@@ -64,12 +71,12 @@ class AdminController extends Controller
 
     public function moderationStats()
     {
-        $pendingReviews = VerificationCode::where('verified', false)->count();
+        $pendingReviews = MissingReport::where('approved', 0)->count();
 
         return response()->json([
             'pendingReviews' => $pendingReviews,
             'highPriority' => 0,
-            'resolvedToday' => VerificationCode::where('verified', true)
+            'resolvedToday' => MissingReport::where('approved', 1)
                 ->whereDate('updated_at', now()->toDateString())
                 ->count(),
             'avgResponseTime' => 'N/A',
@@ -78,8 +85,8 @@ class AdminController extends Controller
 
     public function moderationReports()
     {
-        $items = VerificationCode::query()
-            ->where('verified', false)
+        $items = MissingReport::query()
+            ->where('approved', 0)
             ->latest('created_at')
             ->limit(25)
             ->get()
@@ -87,14 +94,14 @@ class AdminController extends Controller
                 return [
                     'id' => $record->id,
                     'type' => 'report',
-                    'title' => 'Verification pending for ' . $record->email,
-                    'submittedBy' => $record->email,
+                    'title' => 'Missing: ' . $record->name,
+                    'submittedBy' => $record->contact_person_name,
                     'date' => optional($record->created_at)->format('Y-m-d'),
                     'priority' => 'medium',
                     'status' => 'pending',
-                    'description' => 'Email verification code is pending confirmation.',
-                    'division' => null,
-                    'age' => null,
+                    'description' => $record->additional_info,
+                    'division' => $record->district,
+                    'age' => $record->age,
                     'reason' => null,
                     'notes' => null,
                 ];
@@ -117,7 +124,7 @@ class AdminController extends Controller
     private function monthlyReportSeries()
     {
         $start = Carbon::now()->startOfMonth()->subMonths(5);
-        $rows = VerificationCode::query()
+        $rows = MissingReport::query()
             ->selectRaw('DATE_FORMAT(created_at, "%Y-%m") as month_key, COUNT(*) as total')
             ->where('created_at', '>=', $start)
             ->groupBy('month_key')
@@ -136,28 +143,27 @@ class AdminController extends Controller
         return $series;
     }
 
-    private function statusDistribution($totalReports, $closedReports, $activeMissing)
+    private function statusDistribution($totalReports, $activeMissing)
     {
-        $matched = 0;
-        $verified = 0;
-        $pending = max($activeMissing, 0);
+        $resolved = max($totalReports - $activeMissing, 0);
+        $pending = $activeMissing;
 
         $segments = [
             ['label' => 'Pending', 'value' => $pending, 'color' => '#f59e0b'],
-            ['label' => 'Verified', 'value' => $verified, 'color' => '#3b82f6'],
-            ['label' => 'Matched', 'value' => $matched, 'color' => '#8b5cf6'],
-            ['label' => 'Closed', 'value' => $closedReports, 'color' => '#10b981'],
+            ['label' => 'Resolved', 'value' => $resolved, 'color' => '#10b981'],
         ];
 
-        return array_map(function ($item) use ($totalReports) {
-            $item['pct'] = $totalReports > 0 ? round(($item['value'] / $totalReports) * 100) : 0;
+        $total = array_sum(array_column($segments, 'value'));
+
+        return array_map(function ($item) use ($total) {
+            $item['pct'] = $total > 0 ? round(($item['value'] / $total) * 100, 1) : 0;
             return $item;
         }, $segments);
     }
 
     private function divisionDistribution()
     {
-        $rows = User::query()
+        $rows = MissingReport::query()
             ->selectRaw('COALESCE(NULLIF(TRIM(district), ""), "Unknown") as name, COUNT(*) as count')
             ->groupBy('name')
             ->orderByDesc('count')
@@ -193,17 +199,17 @@ class AdminController extends Controller
 
     private function activityFeed()
     {
-        $verificationEvents = VerificationCode::query()
+        $reportEvents = MissingReport::query()
             ->latest('updated_at')
             ->limit(5)
             ->get()
             ->map(function ($record) {
                 return [
-                    'text' => $record->verified
-                        ? 'Verification completed for ' . $record->email
-                        : 'Verification pending for ' . $record->email,
+                    'text' => $record->approved
+                        ? 'Report approved for ' . $record->name
+                        : 'New report pending for ' . $record->name,
                     'time' => optional($record->updated_at)->diffForHumans(),
-                    'type' => $record->verified ? 'verify' : 'system',
+                    'type' => $record->approved ? 'verify' : 'system',
                     'ts' => optional($record->updated_at)->timestamp ?? 0,
                 ];
             });
@@ -221,7 +227,7 @@ class AdminController extends Controller
                 ];
             });
 
-        return $verificationEvents
+        return $reportEvents
             ->concat($userEvents)
             ->sortByDesc('ts')
             ->take(8)
