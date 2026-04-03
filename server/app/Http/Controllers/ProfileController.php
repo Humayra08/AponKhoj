@@ -78,6 +78,9 @@ class ProfileController extends Controller
 
         $user->fill($validated);
 
+        if ($newPassword !== null) {
+            $user->password = Hash::make($newPassword);
+        }
 
         $user->save();
 
