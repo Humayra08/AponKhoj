@@ -9,6 +9,7 @@ import {
 import { useAuth } from '../helpers/AuthContext';
 import AdminNavbar from '../Components/AdminNavbar';
 import apiClient from '../api';
+import { getPendingMissingReports } from '../helpers/missingReportService';
 
 /* ─────────────────────────────────────────────────────────────
    DATA HOOK
@@ -19,30 +20,19 @@ import apiClient from '../api';
 function useAdminData() {
     const [loading, setLoading] = useState(true);
 
-    /* ── stats ── */
     const [stats, setStats] = useState({
         totalReports: 0,
         activeMissing: 0,
         users: 0,
         newUsersWeek: 0,
+        successRate: 0,
     });
 
-    /* ── bar chart: { label: string, value: number }[] ── */
     const [monthlyData, setMonthlyData] = useState([]);
-
-    /* ── donut chart: { label, value, color, pct }[] ── */
     const [statusData, setStatusData] = useState([]);
-
-    /* ── division bars: { name, count, max }[] ── */
     const [divisions, setDivisions] = useState([]);
-
-    /* ── reports table: { id, name, age, division, status, date }[] ── */
     const [reports, setReports] = useState([]);
-
-    /* ── recent users: { name, email, joined }[] ── */
     const [recentUsers, setRecentUsers] = useState([]);
-
-    /* ── activity feed: { text, time, type }[] ── */
     const [activity, setActivity] = useState([]);
 
     useEffect(() => {
@@ -50,36 +40,71 @@ function useAdminData() {
 
         const loadAdminData = async () => {
             try {
-                const [statsRes, reportsRes] = await Promise.all([
+                console.log('🔄 Fetching admin stats and reports...');
+                
+                // Fetch stats and recent reports in parallel 
+                const [statsRes, reportsRes, pendingRes] = await Promise.all([
                     apiClient.get('/admin/stats'),
                     apiClient.get('/admin/reports/recent'),
+                    getPendingMissingReports(),
                 ]);
 
                 if (!mounted) return;
 
-                setStats(statsRes?.stats || {
+                console.log('✅ Stats Response:', statsRes);
+                console.log('✅ Recent Reports Response:', reportsRes);
+                console.log('✅ Pending Reports Response:', pendingRes);
+
+                // Extract stats from nested structure
+                const statsData = statsRes?.stats || {
                     totalReports: 0,
                     activeMissing: 0,
                     users: 0,
                     newUsersWeek: 0,
-                });
+                    successRate: 0,
+                };
+
+                // Get total reports count - use length of all reports if available
+                const allReportsData = Array.isArray(reportsRes) ? reportsRes : (reportsRes?.reports ?? []);
+                const pendingReportsArray = pendingRes?.reports ?? [];
+
+                // Override counts with real data from API calls
+                const finalStats = {
+                    ...statsData,
+                    totalReports: statsData.totalReports || allReportsData.length,
+                    activeMissing: pendingReportsArray.length, // Real-time pending count
+                };
+
+                console.log('📊 Final Stats:', finalStats);
+
+                setStats(finalStats);
                 setMonthlyData(statsRes?.monthlyData || []);
                 setStatusData(statsRes?.statusData || []);
                 setDivisions(statsRes?.divisions || []);
                 setRecentUsers(statsRes?.recentUsers || []);
                 setActivity(statsRes?.activity || []);
-                setReports(Array.isArray(reportsRes) ? reportsRes : []);
-            } catch {
+                setReports(allReportsData);
+
+                if (mounted) setLoading(false);
+            } catch (error) {
+                console.error('❌ Error loading admin data:', error?.response?.data || error?.message || error);
+                
                 if (!mounted) return;
-                setStats({ totalReports: 0, activeMissing: 0, users: 0, newUsersWeek: 0 });
+                
+                setStats({ 
+                    totalReports: 0, 
+                    activeMissing: 0, 
+                    users: 0, 
+                    newUsersWeek: 0,
+                    successRate: 0,
+                });
                 setMonthlyData([]);
                 setStatusData([]);
                 setDivisions([]);
                 setReports([]);
                 setRecentUsers([]);
                 setActivity([]);
-            } finally {
-                if (mounted) setLoading(false);
+                setLoading(false);
             }
         };
 
@@ -712,7 +737,7 @@ function AnalyticsSection({ data }) {
     );
 }
 
-/* ──────────────────────────���──────────────────────────────────
+/* ──────────────────────────────────────────────────────────────
    MAIN PAGE
 ───────────────────────────────────────────────────────────── */
 const SECTIONS = {
