@@ -89,6 +89,15 @@ function PersonalInfoTab({ user, updateUser }) {
     const [avatarFile, setAvatarFile] = useState(null);
     const fileRef = useRef();
 
+    useEffect(() => {
+        setForm({
+            name: user?.name || '',
+            phone: user?.phone || '',
+            district: user?.district || '',
+        });
+        setAvatarPreview(user?.avatarUrl || null);
+    }, [user]);
+
     const handleChange = e => setForm(p => ({ ...p, [e.target.name]: e.target.value }));
 
     const handleAvatarChange = e => {
@@ -732,10 +741,10 @@ export default function UserProfilePage() {
                                 <Avatar user={user} size="lg" />
                                 <p className="font-black text-gray-800 mt-3 text-sm">{user?.name || '—'}</p>
                                 <p className="text-xs text-gray-400 mt-0.5 break-all">{user?.email || '—'}</p>
-                                {user?.location && (
+                                {user?.district && (
                                     <span className="inline-flex items-center gap-1 text-[10px] text-primary
                                                      bg-primary/5 px-2 py-0.5 rounded-full mt-2">
-                                        <MapPin size={9} /> {user.location}
+                                        <MapPin size={9} /> {user.district}
                                     </span>
                                 )}
                                 {user?.joinDate && (
