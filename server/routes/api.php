@@ -69,4 +69,7 @@ Route::middleware(['auth:api', 'admin.only'])->group(function () {
     Route::get('admin/missing-reports/pending', [MissingPersonController::class, 'getPending']);
     Route::patch('admin/missing-reports/{id}/approve', [MissingPersonController::class, 'approve']);
     Route::patch('admin/missing-reports/{id}/reject', [MissingPersonController::class, 'reject']);
+
 });
+// PUBLIC Contact Form Route
+Route::post('contact', [App\Http\Controllers\ContactController::class, 'sendContactForm']);

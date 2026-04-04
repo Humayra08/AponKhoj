@@ -1,8 +1,63 @@
 import { useState } from 'react';
-import { Phone, Mail, MapPin, Clock, Send, CheckCircle } from 'lucide-react';
+import { Phone, Mail, MapPin, Clock, Send, CheckCircle, AlertCircle } from 'lucide-react';
+import apiClient from '../api';
+import toast from 'react-hot-toast';
 
 const ContactPage = () => {
     const [submitted, setSubmitted] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+    
+    const [formData, setFormData] = useState({
+        name: '',
+        email: '',
+        phone: '',
+        subject: '',
+        message: '',
+    });
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({
+            ...prev,
+            [name]: value,
+        }));
+        setError('');
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        setError('');
+
+        try {
+            const response = await apiClient.post('/contact', formData);
+
+            if (response.success) {
+                setSubmitted(true);
+                setFormData({
+                    name: '',
+                    email: '',
+                    phone: '',
+                    subject: '',
+                    message: '',
+                });
+                toast.success('বার্তা সফলভাবে পাঠানো হয়েছে!');
+
+                // Reset form after 3 seconds
+                setTimeout(() => {
+                    setSubmitted(false);
+                }, 3000);
+            }
+        } catch (err) {
+            const errorMsg = err.response?.data?.message || 'বার্তা পাঠাতে ত্রুটি হয়েছে। দয়া করে পরে চেষ্টা করুন।';
+            setError(errorMsg);
+            toast.error(errorMsg);
+            console.error('Contact form error:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
         <div className="min-h-screen bg-background">
@@ -59,47 +114,106 @@ const ContactPage = () => {
                                 </div>
                                 <h2 className="text-xl font-black text-gray-800 mb-2">বার্তা পাঠানো হয়েছে!</h2>
                                 <p className="text-gray-500 text-sm">আমরা শীঘ্রই আপনার সাথে যোগাযোগ করব।</p>
-                                <button onClick={() => setSubmitted(false)} className="mt-6 text-sm text-primary hover:underline">আবার পাঠান</button>
                             </div>
                         ) : (
                             <>
                                 <h2 className="text-2xl font-black text-gray-800 mb-6">বার্তা পাঠান</h2>
-                                <div className="space-y-4">
+
+                                {error && (
+                                    <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
+                                        <AlertCircle size={18} className="text-red-500 flex-shrink-0 mt-0.5" />
+                                        <p className="text-xs text-red-700">{error}</p>
+                                    </div>
+                                )}
+
+                                <form onSubmit={handleSubmit} className="space-y-4">
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
                                             <label className="block text-xs text-gray-500 mb-1">আপনার নাম</label>
-                                            <input type="text" placeholder="পূর্ণ নাম" className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                                            <input
+                                                type="text"
+                                                name="name"
+                                                value={formData.name}
+                                                onChange={handleChange}
+                                                placeholder="পূর্ণ নাম"
+                                                required
+                                                className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                            />
                                         </div>
                                         <div>
                                             <label className="block text-xs text-gray-500 mb-1">ফোন নম্বর</label>
-                                            <input type="tel" placeholder="01XXXXXXXXX" className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                                            <input
+                                                type="tel"
+                                                name="phone"
+                                                value={formData.phone}
+                                                onChange={handleChange}
+                                                placeholder="01XXXXXXXXX"
+                                                required
+                                                className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                            />
                                         </div>
                                     </div>
+
                                     <div>
                                         <label className="block text-xs text-gray-500 mb-1">ইমেইল</label>
-                                        <input type="email" placeholder="email@example.com" className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                                        <input
+                                            type="email"
+                                            name="email"
+                                            value={formData.email}
+                                            onChange={handleChange}
+                                            placeholder="email@example.com"
+                                            required
+                                            className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                        />
                                     </div>
+
                                     <div>
                                         <label className="block text-xs text-gray-500 mb-1">বিষয়</label>
-                                        <select className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white">
-                                            <option>বিষয় নির্বাচন করুন</option>
-                                            <option>নিখোঁজ রিপোর্ট সহায়তা</option>
-                                            <option>প্রযুক্তিগত সমস্যা</option>
-                                            <option>অংশীদারিত্ব</option>
-                                            <option>সাধারণ জিজ্ঞাসা</option>
+                                        <select
+                                            name="subject"
+                                            value={formData.subject}
+                                            onChange={handleChange}
+                                            required
+                                            className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white"
+                                        >
+                                            <option value="">বিষয় নির্বাচন করুন</option>
+                                            <option value="নিখোঁজ রিপোর্ট সহায়তা">নিখোঁজ রিপোর্ট সহায়তা</option>
+                                            <option value="প্রযুক্তিগত সমস্যা">প্রযুক্তিগত সমস্যা</option>
+                                            <option value="অংশীদারিত্ব">অংশীদারিত্ব</option>
+                                            <option value="সাধারণ জিজ্ঞাসা">সাধারণ জিজ্ঞাসা</option>
                                         </select>
                                     </div>
+
                                     <div>
                                         <label className="block text-xs text-gray-500 mb-1">বার্তা</label>
-                                        <textarea rows={4} placeholder="আপনার বার্তা লিখুন..." className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none" />
+                                        <textarea
+                                            name="message"
+                                            value={formData.message}
+                                            onChange={handleChange}
+                                            rows={4}
+                                            placeholder="আপনার বার্তা লিখুন..."
+                                            required
+                                            className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
+                                        />
                                     </div>
+
                                     <button
-                                        onClick={() => setSubmitted(true)}
-                                        className="w-full bg-primary hover:bg-primary-dark text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors"
+                                        type="submit"
+                                        disabled={loading}
+                                        className="w-full bg-primary hover:bg-primary-dark text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
-                                        <Send size={16} /> বার্তা পাঠান
+                                        {loading ? (
+                                            <>
+                                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                                পাঠানো হচ্ছে...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Send size={16} /> বার্তা পাঠান
+                                            </>
+                                        )}
                                     </button>
-                                </div>
+                                </form>
                             </>
                         )}
                     </div>
