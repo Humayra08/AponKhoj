@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-    Flag, CheckCircle, XCircle, AlertTriangle, Eye,
-    Search, Filter, Clock, User, FileText, Shield,
-    ChevronDown, X, MessageSquare, TrendingUp, Loader2,
+    Flag, CheckCircle, AlertTriangle, Eye,
+    Search, Filter, FileText, Shield,
+    ChevronDown, X, MessageSquare, Loader2,
     ThumbsUp, ThumbsDown, ArrowUpCircle, HelpCircle,
-    Bell, Menu, MoreHorizontal, Inbox
+    Menu, Inbox
 } from 'lucide-react';
 import { AdminSidebar } from './AdminDashboardPage';
 import { useAuth } from '../helpers/AuthContext';
@@ -26,9 +26,7 @@ function useModerationData() {
     /* Stats strip */
     const [stats, setStats] = useState({
         pendingReviews: 0,
-        highPriority: 0,
         resolvedToday: 0,
-        avgResponseTime: '—',
     });
 
     /*
@@ -62,24 +60,20 @@ function useModerationData() {
                 if (!mounted) return;
 
                 const pendingMissingReports = reportRes?.reports ?? [];
-                const highPriorityMissingReports = pendingMissingReports.filter(item => item.priority === 'high').length;
 
                 setStats({
                     ...(statsRes || {
                         pendingReviews: 0,
-                        highPriority: 0,
                         resolvedToday: 0,
-                        avgResponseTime: '—',
                     }),
                     pendingReviews: pendingMissingReports.length,
-                    highPriority: highPriorityMissingReports,
                 });
                 setPendingReports(pendingMissingReports);
                 setFlaggedUsers(Array.isArray(usersRes) ? usersRes : []);
                 setAppeals(Array.isArray(appealsRes) ? appealsRes : []);
             } catch {
                 if (!mounted) return;
-                setStats({ pendingReviews: 0, highPriority: 0, resolvedToday: 0, avgResponseTime: '—' });
+                setStats({ pendingReviews: 0, resolvedToday: 0 });
                 setPendingReports([]);
                 setFlaggedUsers([]);
                 setAppeals([]);
@@ -125,13 +119,11 @@ const STATUS_STYLE = {
 function StatsStrip({ stats }) {
     const cards = [
         { label: 'অপেক্ষমাণ পর্যালোচনা', value: stats.pendingReviews, icon: Inbox, color: 'bg-amber-50 text-amber-500 border-amber-100' },
-        { label: 'উচ্চ অগ্রাধিকার', value: stats.highPriority, icon: AlertTriangle, color: 'bg-red-50 text-red-500 border-red-100' },
         { label: 'আজকে সমাধান করা হয়েছে', value: stats.resolvedToday, icon: CheckCircle, color: 'bg-emerald-50 text-emerald-500 border-emerald-100' },
-        { label: 'গড় প্রতিক্রিয়া সময়', value: stats.avgResponseTime, icon: Clock, color: 'bg-blue-50 text-blue-500 border-blue-100' },
     ];
 
     return (
-        <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 mb-6">
+        <div className="grid grid-cols-2 xl:grid-cols-2 gap-3 mb-6">
             {cards.map((c, i) => (
                 <div key={i} className={`flex items-center gap-3 p-4 rounded-2xl border ${c.color} bg-white shadow-sm`}>
                     <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${c.color}`}>
@@ -383,7 +375,7 @@ function QueueTable({ items, onReview, loading, emptyLabel }) {
 ══════════════════════════════════════════ */
 const TABS = [
     { id: 'reports', label: 'মিসিং রিপোর্ট', icon: FileText, emptyLabel: 'কোনো অপেক্ষমাণ মিসিং রিপোর্ট নেই' },
-    { id: 'users', label: 'ফ্ল্যাগড ব্যবহারকারী', icon: User, emptyLabel: 'কোনো ফ্ল্যাগড ব্যবহারকারী নেই' },
+    { id: 'users', label: 'ফ্ল্যাগড ব্যবহারকারী', icon: Shield, emptyLabel: 'কোনো ফ্ল্যাগড ব্যবহারকারী নেই' },
     { id: 'appeals', label: 'আপিল', icon: MessageSquare, emptyLabel: 'কোনো আপিল নেই' },
 ];
 
@@ -550,4 +542,3 @@ export default function AdminModerationPage() {
         </div>
     );
 }
-

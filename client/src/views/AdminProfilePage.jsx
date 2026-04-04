@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
     User, Mail, Phone, Lock, Eye, EyeOff, CheckCircle, AlertTriangle,
-    Shield, Settings, FileText, Key, Save, Loader2,
-    ToggleLeft, ToggleRight, Clock, HelpCircle, ChevronRight
+    Shield, FileText, Key, Save, Loader2,
+    Clock, HelpCircle, ChevronRight
 } from 'lucide-react';
 import { useAuth } from '../helpers/AuthContext';
 import { AdminSidebar } from './AdminDashboardPage';
@@ -31,7 +31,6 @@ function AdminInfoTab({ user, updateUser }) {
     const [form, setForm] = useState({
         name: user?.name || '',
         phone: user?.phone || '',
-        designation: user?.designation || 'সিনিয়র অ্যাডমিন',
         department: user?.department || 'ব্যবস্থাপনা বিভাগ',
     });
     const [saving, setSaving] = useState(false);
@@ -82,11 +81,7 @@ function AdminInfoTab({ user, updateUser }) {
                         <input className={inputCls()} name="phone" value={form.phone}
                             onChange={handleChange} placeholder="01XXXXXXXXX" type="tel" />
                     </Field>
-                    <Field label="পদবি" icon={User}>
-                        <input className={inputCls()} name="designation" value={form.designation}
-                            onChange={handleChange} placeholder="যেমন: সিনিয়র অ্যাডমিন" />
-                    </Field>
-                    <Field label="বিভাগ" icon={Settings} hint="আপনার কাজের বিভাগ লিখুন">
+                    <Field label="বিভাগ" hint="আপনার কাজের বিভাগ লিখুন">
                         <input className={inputCls()} name="department" value={form.department}
                             onChange={handleChange} placeholder="যেমন: ব্যবস্থাপনা বিভাগ" />
                     </Field>
@@ -134,7 +129,7 @@ function SecurityTab() {
     return (
         <div>
             <h2 className="text-xl font-black text-gray-800 mb-1">নিরাপত্তা</h2>
-            <p className="text-sm text-gray-400 mb-7">পাসওয়ার্ড ও সেশন ব্যবস্থাপনা</p>
+            <p className="text-sm text-gray-400 mb-7">পাসওয়ার্ড পরিচালনা</p>
 
             {error && (
                 <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3 rounded-xl mb-5">
@@ -162,75 +157,6 @@ function SecurityTab() {
                             : <><Key size={14} /> পাসওয়ার্ড পরিবর্তন করুন</>}
                 </button>
             </form>
-
-            {/* Active sessions */}
-            <div className="bg-gray-50 border border-gray-100 rounded-2xl p-5">
-                <h3 className="font-bold text-gray-800 text-sm mb-4 flex items-center gap-2">
-                    <Shield size={14} className="text-red-500" /> সক্রিয় সেশন
-                </h3>
-                {[{ device: 'Chrome — Windows 11 (এই ডিভাইস)', time: 'এখন সক্রিয়', current: true },
-                { device: 'Firefox — Android', time: '২ দিন আগে', current: false }].map((s, i) => (
-                    <div key={i} className="flex items-center justify-between p-3 bg-white rounded-xl border border-gray-100 mb-2 last:mb-0">
-                        <div>
-                            <p className="text-xs font-semibold text-gray-700">{s.device}</p>
-                            <p className="text-[10px] text-gray-400 mt-0.5">{s.time}</p>
-                        </div>
-                        {s.current
-                            ? <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">বর্তমান</span>
-                            : <button className="text-[10px] text-red-500 font-semibold hover:underline">লগআউট</button>}
-                    </div>
-                ))}
-            </div>
-
-            {/* 2FA */}
-            <div className="mt-4 bg-white border border-gray-100 rounded-2xl p-5 flex items-center justify-between">
-                <div>
-                    <h3 className="font-bold text-gray-800 text-sm">দুই-ধাপ যাচাইকরণ (2FA)</h3>
-                    <p className="text-xs text-gray-400 mt-0.5">OTP-ভিত্তিক অতিরিক্ত নিরাপত্তা</p>
-                </div>
-                <span className="text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-full">শীঘ্রই</span>
-            </div>
-        </div>
-    );
-}
-
-/* ─── Tab: Permissions ─── */
-function PermissionsTab() {
-    const permissions = [
-        { label: 'রিপোর্ট যাচাই করুন', granted: true },
-        { label: 'রিপোর্ট মুছে ফেলুন', granted: true },
-        { label: 'ব্যবহারকারী পরিচালনা করুন', granted: true },
-        { label: 'অ্যাডমিন নিয়োগ করুন', granted: false },
-        { label: 'সিস্টেম সেটিংস পরিবর্তন করুন', granted: true },
-        { label: 'ব্যাকআপ ও এক্সপোর্ট', granted: true },
-        { label: 'AI ম্যাচিং নিয়ন্ত্রণ', granted: true },
-        { label: 'সুপার অ্যাডমিন অ্যাক্সেস', granted: false },
-    ];
-
-    return (
-        <div>
-            <h2 className="text-xl font-black text-gray-800 mb-1">অনুমতি</h2>
-            <p className="text-sm text-gray-400 mb-7">আপনার অ্যাডমিন অনুমতির তালিকা (শুধুমাত্র পড়ার জন্য)</p>
-
-            <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
-                {permissions.map((p, i) => (
-                    <div key={i} className="flex items-center justify-between px-5 py-3.5 border-b border-gray-50 last:border-0">
-                        <p className="text-sm font-semibold text-gray-700">{p.label}</p>
-                        {p.granted
-                            ? <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full">
-                                <CheckCircle size={10} /> অনুমোদিত
-                            </span>
-                            : <span className="text-[10px] font-bold text-gray-400 bg-gray-50 border border-gray-200 px-2.5 py-1 rounded-full">
-                                অনুমোদিত নয়
-                            </span>}
-                    </div>
-                ))}
-            </div>
-
-            <div className="mt-4 bg-blue-50 border border-blue-100 rounded-xl p-4 text-xs text-blue-600">
-                <HelpCircle size={13} className="inline mr-1.5" />
-                অনুমতি পরিবর্তন করতে সুপার অ্যাডমিনের সাথে যোগাযোগ করুন।
-            </div>
         </div>
     );
 }
@@ -280,71 +206,11 @@ function ActivityLogTab() {
     );
 }
 
-/* ─── Tab: System Settings ─── */
-function SystemSettingsTab() {
-    const [settings, setSettings] = useState({
-        maintenanceMode: false,
-        registrationOpen: true,
-        aiMatching: true,
-        publicSearch: true,
-        emailNotifications: true,
-        autoVerify: false,
-    });
-    const [saved, setSaved] = useState(false);
-
-    const toggle = key => setSettings(p => ({ ...p, [key]: !p[key] }));
-
-    const items = [
-        { key: 'maintenanceMode', label: 'মেইনটেন্যান্স মোড', desc: 'চালু করলে সাধারণ ব্যবহারকারীরা সাইট এক্সেস করতে পারবেন না', danger: true },
-        { key: 'registrationOpen', label: 'নিবন্ধন চালু', desc: 'নতুন ব্যবহারকারী নিবন্ধন করতে পারবেন কিনা' },
-        { key: 'aiMatching', label: 'AI ম্যাচিং সক্রিয়', desc: 'ফেস রিকগনিশন ভিত্তিক স্বয়ংক্রিয় ম্যাচিং' },
-        { key: 'publicSearch', label: 'পাবলিক সার্চ', desc: 'লগইন ছাড়াই রিপোর্ট খুঁজে দেখা যাবে' },
-        { key: 'emailNotifications', label: 'ইমেইল বিজ্ঞপ্তি', desc: 'সিস্টেম ইভেন্টের জন্য ইমেইল পাঠানো' },
-        { key: 'autoVerify', label: 'স্বয়ংক্রিয় যাচাইকরণ', desc: 'নতুন রিপোর্ট স্বয়ংক্রিয়ভাবে যাচাইকৃত হবে', danger: true },
-    ];
-
-    return (
-        <div>
-            <h2 className="text-xl font-black text-gray-800 mb-1">সিস্টেম সেটিংস</h2>
-            <p className="text-sm text-gray-400 mb-7">প্ল্যাটফর্মের বৈশ্বিক পরিচালনা নিয়ন্ত্রণ করুন</p>
-
-            <div className="space-y-3">
-                {items.map(item => (
-                    <div key={item.key}
-                        className={`flex items-center justify-between p-5 bg-white rounded-2xl border shadow-sm
-                                    ${item.danger ? 'border-red-100' : 'border-gray-100'}`}>
-                        <div className="flex-1 pr-4">
-                            <p className={`text-sm font-bold ${item.danger ? 'text-red-700' : 'text-gray-800'}`}>{item.label}</p>
-                            <p className="text-xs text-gray-400 mt-0.5">{item.desc}</p>
-                        </div>
-                        <button onClick={() => toggle(item.key)} type="button"
-                            className={`relative w-12 h-6 rounded-full transition-all duration-300 flex-shrink-0
-                                        ${settings[item.key]
-                                    ? (item.danger ? 'bg-red-500' : 'bg-red-500')
-                                    : 'bg-gray-200'}`}>
-                            <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow
-                                              transition-transform duration-300 ${settings[item.key] ? 'translate-x-6' : ''}`} />
-                        </button>
-                    </div>
-                ))}
-            </div>
-
-            <button onClick={() => { setSaved(true); setTimeout(() => setSaved(false), 3000); }}
-                className="mt-6 flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white
-                           py-3 px-6 rounded-xl font-bold text-sm transition-all shadow-sm">
-                {saved ? <><CheckCircle size={15} /> সংরক্ষিত হয়েছে!</> : <><Save size={15} /> সেটিংস সংরক্ষণ করুন</>}
-            </button>
-        </div>
-    );
-}
-
 /* ─── MAIN PAGE ─── */
 const TABS = [
     { id: 'info', label: 'অ্যাডমিন তথ্য', icon: User, Component: AdminInfoTab },
     { id: 'security', label: 'নিরাপত্তা', icon: Shield, Component: SecurityTab },
-    { id: 'perms', label: 'অনুমতি', icon: Key, Component: PermissionsTab },
     { id: 'logs', label: 'কার্যক্রম লগ', icon: FileText, Component: ActivityLogTab },
-    { id: 'system', label: 'সিস্টেম সেটিংস', icon: Settings, Component: SystemSettingsTab },
 ];
 
 export default function AdminProfilePage() {
@@ -363,7 +229,7 @@ export default function AdminProfilePage() {
         <div className="flex h-screen bg-gray-50 overflow-hidden">
             {/* Sidebar */}
             <div className="hidden lg:flex">
-                <AdminSidebar active="settings" onNav={id => navigate(`/admin/dashboard#${id}`)}
+                <AdminSidebar active="profile" onNav={id => navigate(`/admin/dashboard#${id}`)}
                     collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(p => !p)} />
             </div>
 

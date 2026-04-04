@@ -1,10 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-    Bell, Search, Menu, Shield, ChevronDown,
-    FileText, Users, Flag,
-    AlertTriangle, X,
-    Plus, UserCheck, BarChart2, RefreshCw
+    Bell, Search, Menu, Shield,
+    FileText, UserCheck, AlertTriangle, X,
+    RefreshCw
 } from 'lucide-react';
 
 import { useAuth } from '../helpers/AuthContext';
@@ -20,16 +19,6 @@ const NOTIF_ICON = {
     system: { icon: RefreshCw, cls: 'text-gray-500   bg-gray-100' },
     alert: { icon: AlertTriangle, cls: 'text-red-500    bg-red-50' },
 };
-
-/* ─────────────────────────────────────────
-   QUICK ACTIONS
-───────────────────────────────────────── */
-const QUICK_ACTIONS = [
-    { label: 'নতুন রিপোর্ট যোগ করুন', icon: Plus, to: '/admin/dashboard' },
-    { label: 'রিপোর্ট মডারেশন', icon: Flag, to: '/admin/moderation' },
-    { label: 'ব্যবহারকারী ব্যবস্থাপনা', icon: Users, to: '/admin/dashboard' },
-    { label: 'বিশ্লেষণ দেখুন', icon: BarChart2, to: '/admin/dashboard' },
-];
 
 /* ─────────────────────────────────────────
    NOTIFICATION PANEL
@@ -162,15 +151,12 @@ export default function AdminNavbar({ breadcrumb = 'ড্যাশবোর্�
     const unread = notifications.filter(n => !n.read).length;
 
     const [notifOpen, setNotifOpen] = useState(false);
-    const [quickOpen, setQuickOpen] = useState(false);
 
     /* Close dropdowns on outside click */
     const notifRef = useRef(null);
-    const quickRef = useRef(null);
     useEffect(() => {
         const handler = (e) => {
             if (notifRef.current && !notifRef.current.contains(e.target)) setNotifOpen(false);
-            if (quickRef.current && !quickRef.current.contains(e.target)) setQuickOpen(false);
         };
         document.addEventListener('mousedown', handler);
         return () => document.removeEventListener('mousedown', handler);
@@ -214,37 +200,9 @@ export default function AdminNavbar({ breadcrumb = 'ড্যাশবোর্�
                     <Search size={16} />
                 </button>
 
-                {/* Quick actions */}
-                <div ref={quickRef} className="relative">
-                    <button onClick={() => { setQuickOpen(p => !p); setNotifOpen(false); }}
-                        className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold
-                                    transition-all ${quickOpen
-                                ? 'bg-red-500 text-white shadow-sm'
-                                : 'text-gray-500 hover:bg-gray-100'}`}>
-                        <Plus size={14} />
-                        <span className="hidden sm:block">দ্রুত অ্যাকশন</span>
-                        <ChevronDown size={11} className={`transition-transform ${quickOpen ? 'rotate-180' : ''}`} />
-                    </button>
-
-                    {quickOpen && (
-                        <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-2xl shadow-xl
-                                        border border-gray-100 z-50 overflow-hidden py-1">
-                            {QUICK_ACTIONS.map((a, i) => (
-                                <Link key={i} to={a.to} onClick={() => setQuickOpen(false)}>
-                                    <button className="flex items-center gap-3 w-full px-4 py-2.5 text-xs
-                                                       font-medium text-gray-700 hover:bg-gray-50 hover:text-red-500 transition-colors text-left">
-                                        <a.icon size={14} className="text-gray-400 flex-shrink-0" />
-                                        {a.label}
-                                    </button>
-                                </Link>
-                            ))}
-                        </div>
-                    )}
-                </div>
-
                 {/* Notification bell */}
                 <div ref={notifRef} className="relative">
-                    <button onClick={() => { setNotifOpen(p => !p); setQuickOpen(false); }}
+                    <button onClick={() => { setNotifOpen(p => !p); }}
                         className={`relative w-9 h-9 flex items-center justify-center rounded-xl
                                     transition-colors ${notifOpen ? 'bg-gray-100' : 'hover:bg-gray-100'}`}>
                         <Bell size={17} className="text-gray-500" />
