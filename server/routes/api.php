@@ -6,7 +6,7 @@ use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\MissingPersonController;
-
+use App\Http\Controllers\Auth\PasswordResetController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -24,6 +24,11 @@ Route::group(['prefix' => 'auth'], function () {
     Route::post('register', [AuthController::class, 'register']);
     Route::post('verify-email', [AuthController::class, 'verifyEmail']);
     Route::post('resend-code', [AuthController::class, 'resendCode']);
+    
+    // Password Reset Routes
+    Route::post('forget-password-request', [PasswordResetController::class, 'requestReset']);
+    Route::post('verify-reset-code', [PasswordResetController::class, 'verifyResetCode']);
+    Route::post('reset-password', [PasswordResetController::class, 'resetPassword']);
     
     // Protected Authentication Routes
     Route::middleware('auth:api')->group(function () {
