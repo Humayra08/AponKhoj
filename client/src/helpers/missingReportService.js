@@ -70,22 +70,52 @@ export const submitMissingReport = async (reportData) => {
 };
 
 /**
- * Get all published missing reports
- * @returns {Promise<{success: boolean, reports: Array}>}
+ * Get paginated published missing reports with server-side filters.
+ *
+ * @param {Object} filters
+ * @param {string}  [filters.district]   — exact district name or omit/"all" for all
+ * @param {number}  [filters.age_min]    — minimum age
+ * @param {number}  [filters.age_max]    — maximum age (send only if < 100)
+ * @param {string}  [filters.gender]     — "male" | "female" | "other"
+ * @param {string}  [filters.search]     — name search string
+ * @param {string}  [filters.sort]       — "newest" | "oldest" | "age_asc" | "age_desc"
+ * @param {number}  [filters.page]       — page number (default 1)
+ * @param {number}  [filters.per_page]   — items per page (default 9)
+ * @returns {Promise<{success: boolean, reports: Array, total: number, last_page: number, current_page: number}>}
  */
-export const getPublishedReports = async () => {
+export const getPublishedReports = async (filters = {}) => {
   try {
-    const response = await apiClient.get('/missing-reports/published');
+    // Build clean params — omit falsy / default values to keep URL clean
+    const params = new URLSearchParams();
+
+    if (filters.district && filters.district !== 'all') params.set('district', filters.district);
+    if (filters.age_min && Number(filters.age_min) > 0) params.set('age_min', filters.age_min);
+    if (filters.age_max && Number(filters.age_max) < 100) params.set('age_max', filters.age_max);
+    if (filters.gender && filters.gender !== 'all') params.set('gender', filters.gender);
+    if (filters.search && filters.search.trim()) params.set('search', filters.search.trim());
+    if (filters.sort && filters.sort !== 'newest') params.set('sort', filters.sort);
+    if (filters.page && filters.page > 1) params.set('page', filters.page);
+    if (filters.per_page) params.set('per_page', filters.per_page);
+
+    const qs = params.toString();
+    const url = `/missing-reports/published${qs ? `?${qs}` : ''}`;
+    const response = await apiClient.get(url);
 
     return {
       success: true,
-      reports: response.reports || response,
+      reports: response.reports || [],
+      total: response.total || 0,
+      last_page: response.last_page || 1,
+      current_page: response.current_page || 1,
     };
   } catch (error) {
     console.error('Fetch reports error:', error);
     return {
       success: false,
       reports: [],
+      total: 0,
+      last_page: 1,
+      current_page: 1,
       message: error.message || 'Failed to fetch reports',
     };
   }
