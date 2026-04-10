@@ -3,7 +3,6 @@ import { Upload, MapPin, FileText, Zap } from 'lucide-react';
 
 const ReportFoundPage = () => {
     const [photo, setPhoto] = useState(null);
-    const [status, setStatus] = useState('healthy');
 
     return (
         <div className="min-h-screen bg-background py-10 px-4">
@@ -38,17 +37,11 @@ const ReportFoundPage = () => {
                     {/* Health Status */}
                     <div>
                         <h2 className="text-base font-semibold text-gray-700 mb-3">স্বাস্থ্য অবস্থা</h2>
-                        <div className="flex gap-3">
-                            {['healthy', 'sick', 'unknown'].map(s => (
-                                <button
-                                    key={s}
-                                    onClick={() => setStatus(s)}
-                                    className={`flex-1 py-2 rounded-lg border text-sm font-medium transition-colors ${status === s ? 'border-accent-teal bg-accent-teal/10 text-accent-teal' : 'border-gray-200 text-gray-500'}`}
-                                >
-                                    {s === 'healthy' ? 'সুস্থ' : s === 'sick' ? 'অসুস্থ' : 'অজানা'}
-                                </button>
-                            ))}
-                        </div>
+                        <input
+                            type="text"
+                            placeholder="অবস্থা লিখুন"
+                            className="w-full border border-gray-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                        />
                     </div>
 
                     {/* Location */}
@@ -61,11 +54,11 @@ const ReportFoundPage = () => {
                             </div>
                             <div>
                                 <label className="block text-xs text-gray-500 mb-1">জেলা</label>
-                                <select className="w-full border border-gray-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white">
-                                    <option>ঢাকা</option>
-                                    <option>চট্টগ্রাম</option>
-                                    <option>রাজশাহী</option>
-                                </select>
+                                <input
+                                    type="text"
+                                    placeholder="জেলার নাম লিখুন"
+                                    className="w-full border border-gray-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                />
                             </div>
                             <div className="md:col-span-2">
                                 <label className="block text-xs text-gray-500 mb-1">বিস্তারিত ঠিকানা</label>
