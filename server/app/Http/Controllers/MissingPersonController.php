@@ -108,42 +108,87 @@ class MissingPersonController extends Controller
         }
     }
 
-    /**
-     * Get all approved/published missing person reports
-     * 
-     * GET /api/missing-reports/published
-     */
-    public function getPublished()
+  
+     
+    public function getPublished(Request $request)
     {
         try {
-            $reports = MissingReport::where('approved', true)
-                ->where('status', 'published')
-                ->latest('created_at')
-                ->get()
-                ->map(function ($report) {
-                    return [
-                        'id' => $report->id,
-                        'name' => $report->name,
-                        'age' => $report->age,
-                        'gender' => $report->gender,
-                        'height' => $report->height,
-                        'photo_url' => $report->photo_url,
-                        'last_seen_date' => optional($report->last_seen_date)->format('Y-m-d'),
-                        'last_seen_time' => $report->last_seen_time,
-                        'district' => $report->district,
-                        'address' => $report->address,
-                        'clothing_description' => $report->clothing_description,
-                        'additional_info' => $report->additional_info,
-                        'contact_person_name' => $report->contact_person_name,
-                        'contact_phone' => $report->contact_phone,
-                        'created_at' => optional($report->created_at)->format('Y-m-d'),
-                    ];
+            $query = MissingReport::where('approved', true)
+                ->where('status', 'published');
+
+            // ── Filter: district ─────────────────────────────────────
+            $district = $request->query('district');
+            if ($district && $district !== 'all') {
+                $query->where('district', $district);
+            }
+
+            // ── Filter: age range ────────────────────────────────────
+            $ageMin = $request->query('age_min');
+            $ageMax = $request->query('age_max');
+            if (is_numeric($ageMin) && (int)$ageMin > 0) {
+                $query->where(function ($q) use ($ageMin) {
+                    $q->whereNull('age')->orWhere('age', '>=', (int)$ageMin);
                 });
+            }
+            if (is_numeric($ageMax) && (int)$ageMax < 100) {
+                $query->where(function ($q) use ($ageMax) {
+                    $q->whereNull('age')->orWhere('age', '<=', (int)$ageMax);
+                });
+            }
+
+            // ── Filter: gender ───────────────────────────────────────
+            $gender = $request->query('gender');
+            if ($gender && in_array($gender, ['male', 'female', 'other'])) {
+                $query->where('gender', $gender);
+            }
+
+            // ── Filter: name search ──────────────────────────────────
+            $search = trim($request->query('search', ''));
+            if ($search !== '') {
+                $query->where('name', 'like', '%' . $search . '%');
+            }
+
+            // ── Sort ─────────────────────────────────────────────────
+            $sort = $request->query('sort', 'newest');
+            match ($sort) {
+                'oldest'   => $query->oldest('created_at'),
+                'age_asc'  => $query->orderByRaw('ISNULL(age), age ASC'),
+                'age_desc' => $query->orderByRaw('ISNULL(age), age DESC'),
+                default    => $query->latest('created_at'),
+            };
+
+            // ── Pagination ───────────────────────────────────────────
+            $perPage = min((int)($request->query('per_page', 9)), 50);
+            $paginator = $query->paginate($perPage);
+
+            $items = collect($paginator->items())->map(function ($report) {
+                return [
+                    'id'                  => $report->id,
+                    'name'                => $report->name,
+                    'age'                 => $report->age,
+                    'gender'              => $report->gender,
+                    'height'              => $report->height,
+                    'photo_url'           => $report->photo_url,
+                    'last_seen_date'      => optional($report->last_seen_date)->format('Y-m-d'),
+                    'last_seen_time'      => $report->last_seen_time,
+                    'district'            => $report->district,
+                    'address'             => $report->address,
+                    'clothing_description' => $report->clothing_description,
+                    'additional_info'     => $report->additional_info,
+                    'contact_person_name' => $report->contact_person_name,
+                    'contact_phone'       => $report->contact_phone,
+                    'created_at'          => optional($report->created_at)->format('Y-m-d'),
+                ];
+            });
 
             return response()->json([
-                'success' => true,
-                'count' => count($reports),
-                'reports' => $reports,
+                'success'      => true,
+                'reports'      => $items,
+                'total'        => $paginator->total(),
+                'per_page'     => $paginator->perPage(),
+                'current_page' => $paginator->currentPage(),
+                'last_page'    => $paginator->lastPage(),
+                'count'        => $items->count(),
             ], 200);
 
         } catch (\Exception $e) {

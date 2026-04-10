@@ -97,6 +97,63 @@ class ApiClient {
     }
   }
 
+ /**
+   * Step 1: Request password reset code
+   * POST /api/auth/forget-password-request
+   * @param {string} email - User's email
+   * @returns {Promise<Object>} { message, email }
+   */
+  async forgetPasswordRequest(email) {
+    try {
+      const response = await this.client.post('/auth/forget-password-request', { email });
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Step 1.5: Verify the reset code
+   * POST /api/auth/verify-reset-code
+   * @param {string} email - User's email
+   * @param {string} code - 4-digit verification code
+   * @returns {Promise<Object>} { message, valid }
+   */
+  async verifyResetCode(email, code) {
+    try {
+      const response = await this.client.post('/auth/verify-reset-code', { email, code });
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Step 2: Reset password with code
+   * POST /api/auth/reset-password
+   * @param {string} email - User's email
+   * @param {string} code - 4-digit verification code
+   * @param {string} password - New password
+   * @param {string} passwordConfirmation - Password confirmation
+   * @returns {Promise<Object>} { message }
+   */
+  async resetPassword(email, code, password, passwordConfirmation) {
+    try {
+      const response = await this.client.post('/auth/reset-password', {
+        email,
+        code,
+        password,
+        password_confirmation: passwordConfirmation,
+      });
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
   async get(url, config = {}) {
     try {
       const response = await this.client.get(url, config);
