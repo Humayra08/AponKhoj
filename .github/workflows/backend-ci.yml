@@ -57,6 +57,10 @@ jobs:
         key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
         restore-keys: ${{ runner.os }}-composer-
 
+    - name: Remove old composer.lock to rebuild for PHP 8.1
+      working-directory: ./server
+      run: rm -f composer.lock
+
     - name: Install server dependencies
       working-directory: ./server
       run: composer install --prefer-dist --no-progress
