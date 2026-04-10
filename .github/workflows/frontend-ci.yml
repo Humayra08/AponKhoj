@@ -36,7 +36,11 @@ jobs:
 
     - name: Install client dependencies
       working-directory: ./client
-      run: npm install
+      run: npm install --legacy-peer-deps
+
+    - name: Rebuild native modules
+      working-directory: ./client
+      run: npm rebuild
 
     - name: Run ESLint
       working-directory: ./client
