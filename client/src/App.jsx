@@ -29,6 +29,7 @@ import LegalAidPage from './views/LegalAidPage';
 import PrivacyPage from './views/PrivacyPage';
 import ContactPage from './views/ContactPage';
 import EmergencyDetailsPage from './views/EmergencyDetailsPage';
+import GoogleAuthCallbackPage from './views/GoogleAuthCallbackPage';
 
 function AppShell() {
   const { pathname } = useLocation();
@@ -43,6 +44,7 @@ function AppShell() {
           {/* Public / User routes */}
           <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/auth/google/callback" element={<GoogleAuthCallbackPage />} />
           <Route path="/register" element={<RegistrationPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/help" element={<HelpPage />} />

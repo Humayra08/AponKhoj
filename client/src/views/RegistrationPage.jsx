@@ -4,6 +4,8 @@ import { User, Mail, Phone, MapPin, Lock, Eye, EyeOff, Search, Loader2 } from 'l
 import { useAuth } from '../helpers/AuthContext';
 import apiClient from '../api';
 import toast from 'react-hot-toast';
+import { secrets } from '../secrets';
+import GoogleMark from '../Components/GoogleMark';
 
 
 const RegistrationPage = () => {
@@ -13,6 +15,14 @@ const RegistrationPage = () => {
     const [form, setForm] = useState({ name: '', email: '', phone: '', location: '', password: '', password_confirmation: '' });
     const navigate = useNavigate();
     const { login } = useAuth();
+
+    const handleGoogleRegistration = () => {
+        const backendBase = (secrets.backendEndpoint || 'http://localhost')
+            .replace(/\/+$/, '')
+            .replace(/\/api$/i, '');
+
+        window.location.href = `${backendBase}/auth/google`;
+    };
 
     const handleChange = e => setForm(p => ({ ...p, [e.target.name]: e.target.value }));
 
@@ -150,6 +160,15 @@ const RegistrationPage = () => {
                         className="w-full bg-primary hover:bg-primary-dark text-white py-2.5 rounded-lg font-medium
                                    transition-colors mt-2 disabled:opacity-60 flex items-center justify-center gap-2">
                         {loading ? <><Loader2 size={16} className="animate-spin" /> রেজিস্ট্রেশন হচ্ছে...</> : 'রেজিস্ট্রেশন করুন'}
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={handleGoogleRegistration}
+                        className="w-full border border-gray-200 hover:border-gray-300 bg-white text-gray-700 py-2.5 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+                    >
+                        <GoogleMark className="w-5 h-5" />
+                        গুগল দিয়ে চালিয়ে যান
                     </button>
                 </form>
 
