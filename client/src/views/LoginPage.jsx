@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, Search, Loader2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { useAuth } from '../helpers/AuthContext';
 import apiClient from '../api';
 
@@ -30,7 +31,7 @@ const handleLogin = async (e) => {
         );
 
     } catch (error) {
-
+        toast.error(error?.response?.data?.message || error?.response?.data?.error || 'লগইন ব্যর্থ হয়েছে');
     } finally {
         setLoading(false);
     }

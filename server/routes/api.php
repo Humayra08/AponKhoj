@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\MissingPersonController;
+use App\Http\Controllers\FoundPersonController;
 use App\Http\Controllers\Auth\PasswordResetController;
 /*
 |--------------------------------------------------------------------------
@@ -53,12 +54,19 @@ Route::middleware('auth:api')->group(function () {
     // Missing Person Reports Routes
     Route::post('missing-reports', [MissingPersonController::class, 'store']);
     Route::get('missing-reports/my', [MissingPersonController::class, 'getMyReports']);
+
+    // Found Person Reports Routes
+    Route::post('found-reports', [FoundPersonController::class, 'store']);
+    Route::get('found-reports/my', [FoundPersonController::class, 'getMyReports']);
 });
 
 // Public missing reports feed
 Route::get('missing-reports/published', [MissingPersonController::class, 'getPublished']);
 Route::get('missing-reports/published/{id}', [MissingPersonController::class, 'getPublishedById']);
 Route::get('missing-reports/stats', [MissingPersonController::class, 'getPublicStats']);
+
+// Public found reports feed
+Route::get('found-reports/published', [FoundPersonController::class, 'getPublished']);
 
 // Admin-only API routes
 Route::middleware(['auth:api', 'admin.only'])->group(function () {
@@ -74,6 +82,13 @@ Route::middleware(['auth:api', 'admin.only'])->group(function () {
     Route::get('admin/missing-reports/pending', [MissingPersonController::class, 'getPending']);
     Route::patch('admin/missing-reports/{id}/approve', [MissingPersonController::class, 'approve']);
     Route::patch('admin/missing-reports/{id}/reject', [MissingPersonController::class, 'reject']);
+
+    // Found Person Reports Admin Routes
+    Route::get('admin/found-reports/pending', [FoundPersonController::class, 'getPending']);
+    Route::get('admin/found-reports/{id}/matches', [FoundPersonController::class, 'getMatches']);
+    Route::post('admin/found-reports/{id}/rematch', [FoundPersonController::class, 'rematch']);
+    Route::patch('admin/found-reports/{id}/approve', [FoundPersonController::class, 'approve']);
+    Route::patch('admin/found-reports/{id}/reject', [FoundPersonController::class, 'reject']);
 
 });
 // PUBLIC Contact Form Route

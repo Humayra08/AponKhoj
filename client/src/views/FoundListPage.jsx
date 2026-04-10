@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { MapPin, Shirt, ArrowRight, SlidersHorizontal, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeftOpen, Shield, Calendar } from 'lucide-react';
+import apiClient from '../api';
 
 const avatar = (seed, gender, age) => {
     if (!seed) return `https://api.dicebear.com/7.x/shapes/png?seed=unknown&size=200&backgroundColor=d4ede9`;
@@ -8,8 +9,6 @@ const avatar = (seed, gender, age) => {
     const bg = gender === 'female' ? 'e8f5f2' : 'd4ede9';
     return `https://api.dicebear.com/7.x/${style}/png?seed=${encodeURIComponent(seed)}&size=300&backgroundColor=${bg}`;
 };
-
-const ALL_FOUND = [];
 
 const DIVISIONS = ['সব', 'ঢাকা', 'চট্টগ্রাম', 'রাজশাহী', 'খুলনা', 'বরিশাল', 'সিলেট', 'রংপুর', 'ময়মনসিংহ'];
 const CONDITIONS = ['সব', 'স্বাভাবিক', 'চিকিৎসাধীন'];
@@ -23,6 +22,8 @@ const conditionColor = c => c === 'স্বাভাবিক'
     : 'bg-accent-red/10 text-accent-red';
 
 export default function FoundListPage() {
+    const [allFound, setAllFound] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [activeDiv, setActiveDiv] = useState('সব');
     const [genderFilter, setGenderFilter] = useState('সবাই');
@@ -31,6 +32,52 @@ export default function FoundListPage() {
     const [selectedColors, setSelectedColors] = useState([]);
     const [sortBy, setSortBy] = useState('সর্বশেষ আগে');
     const [page, setPage] = useState(1);
+
+    useEffect(() => {
+        let mounted = true;
+
+        const loadPublishedFoundReports = async () => {
+            try {
+                const response = await apiClient.get('/found-reports/published');
+                const reports = Array.isArray(response?.reports) ? response.reports : [];
+
+                const mapped = reports.map((r) => {
+                    const condition = r.health_status === 'sick' ? 'চিকিৎসাধীন' : 'স্বাভাবিক';
+                    return {
+                        id: r.id,
+                        name: r.name || 'অজ্ঞাত',
+                        age: r.approximate_age ?? 0,
+                        gender: r.gender,
+                        condition,
+                        division: r.district,
+                        district: r.district,
+                        foundAt: r.address || 'ঠিকানা উল্লেখ নেই',
+                        clothing: r.physical_description || 'বিবরণ নেই',
+                        foundDate: r.found_date || 'তারিখ নেই',
+                        seed: r.name || String(r.id),
+                    };
+                });
+
+                if (mounted) {
+                    setAllFound(mapped);
+                }
+            } catch (error) {
+                if (mounted) {
+                    setAllFound([]);
+                }
+            } finally {
+                if (mounted) {
+                    setLoading(false);
+                }
+            }
+        };
+
+        loadPublishedFoundReports();
+
+        return () => {
+            mounted = false;
+        };
+    }, []);
 
     const toggleColor = c =>
         setSelectedColors(prev => prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c]);
@@ -44,7 +91,7 @@ export default function FoundListPage() {
         setPage(1);
     };
 
-    const filtered = ALL_FOUND.filter(r => {
+    const filtered = allFound.filter(r => {
         if (activeDiv !== 'সব' && r.division !== activeDiv) return false;
         if (genderFilter === 'পুরুষ' && r.gender !== 'male') return false;
         if (genderFilter === 'নারী' && r.gender !== 'female') return false;
@@ -123,7 +170,7 @@ export default function FoundListPage() {
                         আপনার পরিচিত কেউ থাকলে যোগাযোগ করুন।
                     </p>
                     <div className="flex flex-wrap gap-4 mt-5 text-sm">
-                            {[['০', 'মোট উদ্ধার'], ['০', 'পরিচয় অনিশ্চিত'], ['০', 'চিকিৎসাধীন']].map(([v, l]) => (
+                            {[[String(allFound.length), 'মোট উদ্ধার'], [String(allFound.filter(r => r.name === 'অজ্ঞাত').length), 'পরিচয় অনিশ্চিত'], [String(allFound.filter(r => r.condition === 'চিকিৎসাধীন').length), 'চিকিৎসাধীন']].map(([v, l]) => (
                             <div key={l} className="bg-white/10 rounded-xl px-4 py-2 text-center">
                                 <p className="font-black text-lg">{v}</p>
                                 <p className="text-white/60 text-xs">{l}</p>
@@ -256,7 +303,11 @@ export default function FoundListPage() {
                     </div>
 
                     {/* Cards */}
-                    {filtered.length === 0 ? (
+                    {loading ? (
+                        <div className="text-center py-20">
+                            <p className="text-gray-500 font-medium">লোড হচ্ছে...</p>
+                        </div>
+                    ) : filtered.length === 0 ? (
                         <div className="text-center py-20">
                             <div className="text-4xl mb-3">🔍</div>
                             <p className="text-gray-500 font-medium">কোনো রেকর্ড পাওয়া যায়নি</p>

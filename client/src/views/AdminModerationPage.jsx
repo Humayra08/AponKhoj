@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     Flag, CheckCircle, AlertTriangle, Eye,
-    Search, Filter, FileText, Shield,
-    ChevronDown, X, MessageSquare, Loader2,
-    ThumbsUp, ThumbsDown, ArrowUpCircle, HelpCircle,
+    Search, FileText, Shield,
+    ChevronDown, X, Loader2,
+    ThumbsUp, ThumbsDown,
     Menu, Inbox
 } from 'lucide-react';
 import { AdminSidebar } from './AdminDashboardPage';
@@ -16,6 +16,11 @@ import {
     getPendingMissingReports,
     rejectMissingReport,
 } from '../helpers/missingReportService';
+import {
+    approveFoundReport,
+    getPendingFoundReports,
+    rejectFoundReport,
+} from '../helpers/foundReportService';
 
 /* ══════════════════════════════════════════
    DATA HOOK — wire up API calls here
@@ -32,51 +37,47 @@ function useModerationData() {
     /*
      * Queue items shape:
      * {
-     *   id, type: 'report'|'user'|'appeal',
+    *   id, type: 'report'|'found'|'appeal',
      *   title, submittedBy, date,
      *   priority: 'high'|'medium'|'low',
      *   status: 'pending'|'under_review'|'escalated',
      *   description, division, age (for reports),
-     *   reason (for user flags & appeals),
+    *   reason (for found reports & appeals),
      *   notes,
      * }
      */
     const [pendingReports, setPendingReports] = useState([]);
-    const [flaggedUsers, setFlaggedUsers] = useState([]);
-    const [appeals, setAppeals] = useState([]);
-
+    const [foundReports, setFoundReports] = useState([]);
     useEffect(() => {
         let mounted = true;
 
         const loadModerationData = async () => {
             try {
-                const [statsRes, reportRes, usersRes, appealsRes] = await Promise.all([
+                const [statsRes, reportRes, foundRes] = await Promise.all([
                     apiClient.get('/admin/moderation/stats'),
                     getPendingMissingReports(),
-                    apiClient.get('/admin/moderation/flagged-users'),
-                    apiClient.get('/admin/moderation/appeals'),
+                    getPendingFoundReports(),
                 ]);
 
                 if (!mounted) return;
 
                 const pendingMissingReports = reportRes?.reports ?? [];
+                const pendingFoundReports = foundRes?.reports ?? [];
 
                 setStats({
                     ...(statsRes || {
                         pendingReviews: 0,
                         resolvedToday: 0,
                     }),
-                    pendingReviews: pendingMissingReports.length,
+                    pendingReviews: pendingMissingReports.length + pendingFoundReports.length,
                 });
                 setPendingReports(pendingMissingReports);
-                setFlaggedUsers(Array.isArray(usersRes) ? usersRes : []);
-                setAppeals(Array.isArray(appealsRes) ? appealsRes : []);
+                setFoundReports(pendingFoundReports);
             } catch {
                 if (!mounted) return;
                 setStats({ pendingReviews: 0, resolvedToday: 0 });
                 setPendingReports([]);
-                setFlaggedUsers([]);
-                setAppeals([]);
+                setFoundReports([]);
             } finally {
                 if (mounted) setLoading(false);
             }
@@ -93,8 +94,7 @@ function useModerationData() {
         loading,
         stats, setStats,
         pendingReports, setPendingReports,
-        flaggedUsers, setFlaggedUsers,
-        appeals, setAppeals,
+        foundReports, setFoundReports,
     };
 }
 
@@ -142,7 +142,7 @@ function StatsStrip({ stats }) {
 /* ══════════════════════════════════════════
    FILTER BAR
 ══════════════════════════════════════════ */
-function FilterBar({ search, setSearch, priority, setPriority, status, setStatus }) {
+function FilterBar({ search, setSearch, status, setStatus }) {
     return (
         <div className="flex flex-wrap items-center gap-3 mb-4">
             {/* Search */}
@@ -153,20 +153,6 @@ function FilterBar({ search, setSearch, priority, setPriority, status, setStatus
                     placeholder="আইডি, নাম বা বিবরণ খুঁজুন..."
                     className="w-full pl-9 pr-4 py-2 text-xs border border-gray-200 rounded-xl
                                focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-400 bg-white" />
-            </div>
-
-            {/* Priority filter */}
-            <div className="relative">
-                <Filter size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                <select value={priority} onChange={e => setPriority(e.target.value)}
-                    className="pl-7 pr-8 py-2 text-xs border border-gray-200 rounded-xl bg-white
-                               focus:outline-none focus:ring-2 focus:ring-red-200 appearance-none cursor-pointer">
-                    <option value="">সব অগ্রাধিকার</option>
-                    <option value="high">উচ্চ</option>
-                    <option value="medium">মধ্যম</option>
-                    <option value="low">নিম্ন</option>
-                </select>
-                <ChevronDown size={11} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
             </div>
 
             {/* Status filter */}
@@ -207,8 +193,10 @@ function DetailPanel({ item, onClose, onAction }) {
 
     if (!item) return null;
 
-    const prio = PRIORITY_STYLE[item.priority] ?? PRIORITY_STYLE.low;
     const stat = STATUS_STYLE[item.status] ?? STATUS_STYLE.pending;
+    const isFoundReport = item.type === 'found' || item.type === 'found_report';
+    const aiMatches = Array.isArray(item.ai_matches) ? item.ai_matches : [];
+    const visibleAiMatches = aiMatches.filter(match => Number(match.total_score) >= 60);
 
     const handleAction = async (action) => {
         setActioning(action);
@@ -239,6 +227,106 @@ function DetailPanel({ item, onClose, onAction }) {
 
                 {/* Content */}
                 <div className="flex-1 overflow-y-auto p-5 space-y-4">
+                    {isFoundReport ? (
+                        <>
+                            <div className="bg-emerald-50/60 border border-emerald-200 rounded-xl p-4">
+                                <p className="text-[10px] text-emerald-700 font-bold uppercase tracking-wider mb-2">উদ্ধার রিপোর্টের পূর্ণ তথ্য</p>
+                                {item.photo_url ? (
+                                    <img
+                                        src={item.photo_url}
+                                        alt={item.title}
+                                        className="w-full h-48 object-cover rounded-xl mb-4 border border-white shadow-sm"
+                                    />
+                                ) : null}
+                                <div className="grid grid-cols-2 gap-3 text-sm">
+                                    <div className="bg-white rounded-xl p-3">
+                                        <p className="text-[10px] text-gray-400 mb-0.5">নাম</p>
+                                        <p className="text-xs font-bold text-gray-700">{item.name || item.title?.replace('উদ্ধার রিপোর্ট: ', '') || '—'}</p>
+                                    </div>
+                                    <div className="bg-white rounded-xl p-3">
+                                        <p className="text-[10px] text-gray-400 mb-0.5">জেলা</p>
+                                        <p className="text-xs font-bold text-gray-700">{item.district ?? '—'}</p>
+                                    </div>
+                                    <div className="bg-white rounded-xl p-3">
+                                        <p className="text-[10px] text-gray-400 mb-0.5">বয়স</p>
+                                        <p className="text-xs font-bold text-gray-700">{item.age ?? item.approximate_age ?? '—'}</p>
+                                    </div>
+                                    <div className="bg-white rounded-xl p-3">
+                                        <p className="text-[10px] text-gray-400 mb-0.5">লিঙ্গ</p>
+                                        <p className="text-xs font-bold text-gray-700">{item.gender ?? '—'}</p>
+                                    </div>
+                                    <div className="bg-white rounded-xl p-3">
+                                        <p className="text-[10px] text-gray-400 mb-0.5">পাওয়ার তারিখ</p>
+                                        <p className="text-xs font-bold text-gray-700">{item.found_date ?? item.date ?? '—'}</p>
+                                    </div>
+                                    <div className="bg-white rounded-xl p-3">
+                                        <p className="text-[10px] text-gray-400 mb-0.5">পাওয়ার সময়</p>
+                                        <p className="text-xs font-bold text-gray-700">{item.found_time ?? '—'}</p>
+                                    </div>
+                                    <div className="bg-white rounded-xl p-3 col-span-2">
+                                        <p className="text-[10px] text-gray-400 mb-0.5">ঠিকানা</p>
+                                        <p className="text-xs font-bold text-gray-700">{item.address ?? '—'}</p>
+                                    </div>
+                                    <div className="bg-white rounded-xl p-3 col-span-2">
+                                        <p className="text-[10px] text-gray-400 mb-0.5">শারীরিক বিবরণ</p>
+                                        <p className="text-xs font-bold text-gray-700">{item.physical_description ?? '—'}</p>
+                                    </div>
+                                    <div className="bg-white rounded-xl p-3 col-span-2">
+                                        <p className="text-[10px] text-gray-400 mb-0.5">অতিরিক্ত তথ্য</p>
+                                        <p className="text-xs font-bold text-gray-700">{item.additional_info ?? '—'}</p>
+                                    </div>
+                                    <div className="bg-white rounded-xl p-3">
+                                        <p className="text-[10px] text-gray-400 mb-0.5">যোগাযোগের নাম</p>
+                                        <p className="text-xs font-bold text-gray-700">{item.contact_person_name ?? '—'}</p>
+                                    </div>
+                                    <div className="bg-white rounded-xl p-3">
+                                        <p className="text-[10px] text-gray-400 mb-0.5">যোগাযোগের ফোন</p>
+                                        <p className="text-xs font-bold text-gray-700">{item.contact_phone ?? '—'}</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-3">AI ম্যাচ ফলাফল</p>
+                                <div className="space-y-3">
+                                    {visibleAiMatches.length === 0 ? (
+                                        <div className="bg-gray-50 rounded-xl p-4 text-sm text-gray-500 text-center">
+                                            কোনো AI মিল পাওয়া যায়নি
+                                        </div>
+                                    ) : (
+                                        visibleAiMatches.map(match => (
+                                            <div key={`${match.missing_report_id}-${match.total_score}`} className="border rounded-xl p-4 bg-gray-50/60">
+                                                <div className="flex items-start justify-between gap-3 mb-2">
+                                                    <div>
+                                                        <p className="text-sm font-bold text-gray-800">{match.missing_name || 'অজানা'}</p>
+                                                        <p className="text-xs text-gray-500">{match.missing_district || '—'} থেকে নিখোঁজ</p>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <p className="text-lg font-black text-gray-800">{match.total_score}%</p>
+                                                        <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${match.match_level === 'high' ? 'bg-emerald-100 text-emerald-700' : match.match_level === 'medium' ? 'bg-blue-100 text-blue-700' : 'bg-gray-200 text-gray-700'}`}>
+                                                            {match.match_level === 'high' ? 'উচ্চ' : match.match_level === 'medium' ? 'মধ্যম' : 'নিম্ন'}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <div className="space-y-1.5 text-xs text-gray-600">
+                                                    <div className="flex justify-between"><span>নাম</span><span className="font-semibold">{match.name_score}/35</span></div>
+                                                    <div className="flex justify-between"><span>জেলা</span><span className="font-semibold">{match.district_score}/25</span></div>
+                                                    <div className="flex justify-between"><span>অবস্থান</span><span className="font-semibold">{match.location_score}/20</span></div>
+                                                    <div className="flex justify-between"><span>বয়স</span><span className="font-semibold">{match.age_score}/10</span></div>
+                                                    <div className="flex justify-between"><span>লিঙ্গ</span><span className="font-semibold">{match.gender_score}/5</span></div>
+                                                    <div className="flex justify-between"><span>বিবরণ</span><span className="font-semibold">{match.description_score}/5</span></div>
+                                                </div>
+                                                {match.ai_reasoning && match.ai_reasoning !== 'Rule-based score' && (
+                                                    <p className="text-xs text-gray-600 italic mt-2 border-t border-gray-200 pt-2">{match.ai_reasoning}</p>
+                                                )}
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+                        </>
+                    ) : null}
+
                     {/* Meta */}
                     <div className="grid grid-cols-2 gap-3">
                         <div className="bg-gray-50 rounded-xl p-3">
@@ -248,10 +336,6 @@ function DetailPanel({ item, onClose, onAction }) {
                         <div className="bg-gray-50 rounded-xl p-3">
                             <p className="text-[10px] text-gray-400 mb-0.5">তারিখ</p>
                             <p className="text-xs font-bold text-gray-700">{item.date ?? '—'}</p>
-                        </div>
-                        <div className="bg-gray-50 rounded-xl p-3">
-                            <p className="text-[10px] text-gray-400 mb-0.5">অগ্রাধিকার</p>
-                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${prio.cls}`}>{prio.label}</span>
                         </div>
                         <div className="bg-gray-50 rounded-xl p-3">
                             <p className="text-[10px] text-gray-400 mb-0.5">স্ট্যাটাস</p>
@@ -286,8 +370,6 @@ function DetailPanel({ item, onClose, onAction }) {
                         {[
                             { id: 'approve', label: 'অনুমোদন', icon: ThumbsUp, cls: 'bg-emerald-500 hover:bg-emerald-600 text-white' },
                             { id: 'reject', label: 'প্রত্যাখ্যান', icon: ThumbsDown, cls: 'bg-red-500 hover:bg-red-600 text-white' },
-                            { id: 'info', label: 'তথ্য চাই', icon: HelpCircle, cls: 'bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200' },
-                            { id: 'escalate', label: 'এস্কেলেট করুন', icon: ArrowUpCircle, cls: 'bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200' },
                         ].map(a => (
                             <button key={a.id} onClick={() => handleAction(a.id)} disabled={!!actioning}
                                 className={`flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold
@@ -323,31 +405,24 @@ function QueueTable({ items, onReview, loading, emptyLabel }) {
             <table className="w-full text-sm">
                 <thead>
                     <tr className="bg-gray-50">
-                        {['আইডি', 'শিরোনাম', 'জমাকারী', 'অগ্রাধিকার', 'স্ট্যাটাস', 'তারিখ', 'অ্যাকশন'].map(h => (
+                        {['আইডি', 'শিরোনাম', 'জমাকারী', 'স্ট্যাটাস', 'তারিখ', 'অ্যাকশন'].map(h => (
                             <th key={h} className="px-4 py-3 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wide whitespace-nowrap">{h}</th>
                         ))}
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
                     {items.map(item => {
-                        const prio = PRIORITY_STYLE[item.priority] ?? PRIORITY_STYLE.low;
                         const stat = STATUS_STYLE[item.status] ?? STATUS_STYLE.pending;
                         return (
                             <tr key={item.id} className="hover:bg-gray-50/60 transition-colors group">
                                 <td className="px-4 py-3.5 text-xs text-gray-400 font-mono">#{item.id}</td>
                                 <td className="px-4 py-3.5">
-                                    <div className="flex items-center gap-2.5 max-w-xs">
-                                        <div className={`w-1.5 h-8 rounded-full flex-shrink-0 ${prio.dot}`} />
-                                        <div className="min-w-0">
-                                            <p className="text-xs font-bold text-gray-700 truncate">{item.title}</p>
-                                            <p className="text-[10px] text-gray-400 truncate mt-0.5">{item.description?.slice(0, 60) ?? '—'}</p>
-                                        </div>
+                                    <div className="min-w-0 max-w-xs">
+                                        <p className="text-xs font-bold text-gray-700 truncate">{item.title}</p>
+                                        <p className="text-[10px] text-gray-400 truncate mt-0.5">{item.description?.slice(0, 60) ?? '—'}</p>
                                     </div>
                                 </td>
                                 <td className="px-4 py-3.5 text-xs text-gray-500 whitespace-nowrap">{item.submittedBy ?? '—'}</td>
-                                <td className="px-4 py-3.5">
-                                    <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${prio.cls}`}>{prio.label}</span>
-                                </td>
                                 <td className="px-4 py-3.5">
                                     <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${stat.cls}`}>{stat.label}</span>
                                 </td>
@@ -375,8 +450,7 @@ function QueueTable({ items, onReview, loading, emptyLabel }) {
 ══════════════════════════════════════════ */
 const TABS = [
     { id: 'reports', label: 'মিসিং রিপোর্ট', icon: FileText, emptyLabel: 'কোনো অপেক্ষমাণ মিসিং রিপোর্ট নেই' },
-    { id: 'users', label: 'ফ্ল্যাগড ব্যবহারকারী', icon: Shield, emptyLabel: 'কোনো ফ্ল্যাগড ব্যবহারকারী নেই' },
-    { id: 'appeals', label: 'আপিল', icon: MessageSquare, emptyLabel: 'কোনো আপিল নেই' },
+    { id: 'found', label: 'উদ্ধার রিপোর্ট', icon: Shield, emptyLabel: 'কোনো অপেক্ষমাণ উদ্ধার রিপোর্ট নেই' },
 ];
 
 export default function AdminModerationPage() {
@@ -388,41 +462,47 @@ export default function AdminModerationPage() {
 
     /* filters */
     const [search, setSearch] = useState('');
-    const [priority, setPriority] = useState('');
     const [status, setStatus] = useState('');
     const [actionLoading, setActionLoading] = useState(false);
 
     const data = useModerationData();
-    const { loading, stats, pendingReports, setPendingReports, flaggedUsers, setFlaggedUsers, appeals, setAppeals } = data;
+    const { loading, stats, pendingReports, setPendingReports, foundReports, setFoundReports } = data;
 
     /* derive current queue based on active tab */
-    const queueMap = { reports: pendingReports, users: flaggedUsers, appeals };
-    const setterMap = { reports: setPendingReports, users: setFlaggedUsers, appeals: setAppeals };
+    const queueMap = { reports: pendingReports, found: foundReports };
     const rawQueue = queueMap[activeTab] ?? [];
 
     /* apply filters */
     const filtered = rawQueue.filter(item => {
         const searchText = `${item.title ?? ''} ${item.submittedBy ?? ''} ${item.address ?? ''} ${item.district ?? ''}`.toLowerCase();
         const matchSearch = !search || searchText.includes(search.toLowerCase()) || String(item.id).includes(search);
-        const matchPriority = !priority || item.priority === priority;
         const matchStatus = !status || item.status === status;
-        return matchSearch && matchPriority && matchStatus;
+        return matchSearch && matchStatus;
     });
 
     /* handle moderation action */
     const handleAction = async (id, action, note) => {
-        if (activeTab !== 'reports') {
-            const setter = setterMap[activeTab];
-            setter(prev => prev.filter(item => item.id !== id));
-            setSelectedItem(null);
+        setActionLoading(true);
+
+        if (activeTab === 'found') {
+            try {
+                const result = action === 'approve'
+                    ? await approveFoundReport(id)
+                    : await rejectFoundReport(id, note);
+
+                if (result.success) {
+                    setFoundReports(prev => prev.filter(item => item.id !== id));
+                    setSelectedItem(null);
+                }
+            } finally {
+                setActionLoading(false);
+            }
             return;
         }
 
         if (action === 'reject' && !note.trim()) {
             return;
         }
-
-        setActionLoading(true);
 
         try {
             const result = action === 'approve'
@@ -477,7 +557,7 @@ export default function AdminModerationPage() {
                     <div className="flex items-center justify-between mb-5">
                         <div>
                             <h1 className="text-xl font-black text-gray-800">মডারেশন প্যানেল</h1>
-                            <p className="text-xs text-gray-400 mt-0.5">মিসিং রিপোর্ট, ব্যবহারকারী ফ্ল্যাগ এবং আপিল পর্যালোচনা করুন</p>
+                            <p className="text-xs text-gray-400 mt-0.5">মিসিং রিপোর্ট এবং উদ্ধার রিপোর্ট পর্যালোচনা করুন</p>
                         </div>
                         <button onClick={() => navigate('/admin/dashboard')}
                             className="text-xs text-gray-500 hover:text-red-500 font-semibold transition-colors hidden lg:block">
@@ -515,7 +595,6 @@ export default function AdminModerationPage() {
                         {/* Filter bar */}
                         <div className="px-5 pt-5 pb-0">
                             <FilterBar search={search} setSearch={setSearch}
-                                priority={priority} setPriority={setPriority}
                                 status={status} setStatus={setStatus} />
                         </div>
 
