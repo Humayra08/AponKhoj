@@ -34,7 +34,7 @@ jobs:
 
     strategy:
       matrix:
-        php-version: ['8.1']
+        php-version: ['8.0']
 
     steps:
     - uses: actions/checkout@v4
@@ -57,7 +57,7 @@ jobs:
         key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
         restore-keys: ${{ runner.os }}-composer-
 
-    - name: Remove old composer.lock to rebuild for PHP 8.1
+    - name: Remove old composer.lock to rebuild for PHP 8.0
       working-directory: ./server
       run: rm -f composer.lock
 
