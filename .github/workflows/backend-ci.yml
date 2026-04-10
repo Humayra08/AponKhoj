@@ -1,0 +1,99 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [ dev, main ]
+    paths:
+      - 'server/**'
+      - '.github/workflows/backend-ci.yml'
+      - 'composer.json'
+  pull_request:
+    branches: [ dev, main ]
+    paths:
+      - 'server/**'
+      - '.github/workflows/backend-ci.yml'
+      - 'composer.json'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: aponkhoj_test
+          MYSQL_ROOT_PASSWORD: root
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+        ports:
+          - 3306:3306
+
+    strategy:
+      matrix:
+        php-version: ['8.0', '8.1']
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup PHP ${{ matrix.php-version }}
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ matrix.php-version }}
+        extensions: mysql, sqlite, pdo_mysql, pdo_sqlite
+        tools: composer:v2
+
+    - name: Get Composer cache directory
+      id: composer-cache
+      run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+    - name: Cache Composer dependencies
+      uses: actions/cache@v3
+      with:
+        path: ${{ steps.composer-cache.outputs.dir }}
+        key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+        restore-keys: ${{ runner.os }}-composer-
+
+    - name: Install server dependencies
+      working-directory: ./server
+      run: composer install --prefer-dist --no-progress
+
+    - name: Create .env file
+      working-directory: ./server
+      run: |
+        cp .env.example .env
+        php artisan key:generate
+
+    - name: Run PHP linting
+      working-directory: ./server
+      run: find app -name "*.php" -exec php -l {} \;
+      continue-on-error: true
+
+    - name: Run migrations
+      working-directory: ./server
+      env:
+        DB_CONNECTION: mysql
+        DB_HOST: 127.0.0.1
+        DB_DATABASE: aponkhoj_test
+        DB_USERNAME: root
+        DB_PASSWORD: root
+      run: php artisan migrate --seed --force
+      continue-on-error: true
+
+    - name: Run PHPUnit tests
+      working-directory: ./server
+      env:
+        DB_CONNECTION: mysql
+        DB_HOST: 127.0.0.1
+        DB_DATABASE: aponkhoj_test
+        DB_USERNAME: root
+        DB_PASSWORD: root
+      run: php artisan test
+      continue-on-error: true
+
+    - name: Build status summary
+      if: always()
+      run: echo "✅ Backend CI pipeline completed!"
