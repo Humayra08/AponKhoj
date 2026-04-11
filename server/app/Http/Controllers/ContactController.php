@@ -35,6 +35,15 @@ class ContactController extends Controller
 
             Log::info('Contact email sent successfully');
 
+            // Send confirmation email to the user
+            Mail::send('emails.contact-confirmation', [
+                'contactName'    => $validated['name'],
+                'contactMessage' => $validated['message'],
+            ], function ($message) use ($validated) {
+                $message->to($validated['email'], $validated['name'])
+                    ->subject('আপনখোঁজ — আপনার বার্তা পাওয়া গেছে');
+            });
+
             return response()->json([
                 'success' => true,
                 'message' => 'আপনার বার্তা সফলভাবে পাঠানো হয়েছে। শীঘ্রই আমরা যোগাযোগ করব।',

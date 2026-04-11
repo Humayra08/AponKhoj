@@ -16,17 +16,61 @@ const ContactPage = () => {
         message: '',
     });
 
+    const [fieldErrors, setFieldErrors] = useState({});
+
+    const validateForm = () => {
+        const errs = {};
+
+        if (!formData.name.trim()) {
+            errs.name = 'নাম প্রদান করুন।';
+        }
+
+        // Email: must match standard pattern
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!formData.email.trim()) {
+            errs.email = 'ইমেইল প্রদান করুন।';
+        } else if (!emailRegex.test(formData.email.trim())) {
+            errs.email = 'সঠিক ইমেইল ঠিকানা দিন (যেমন: example@mail.com)';
+        }
+
+        // Phone: Bangladesh format — 01[3-9]XXXXXXXX (exactly 11 digits)
+        const phoneRegex = /^01[3-9]\d{8}$/;
+        if (!formData.phone.trim()) {
+            errs.phone = 'ফোন নম্বর প্রদান করুন।';
+        } else if (!phoneRegex.test(formData.phone.trim())) {
+            errs.phone = 'সঠিক বাংলাদেশি নম্বর দিন (01XXXXXXXXX, ১১ সংখ্যা)';
+        }
+
+        if (!formData.subject) {
+            errs.subject = 'বিষয় নির্বাচন করুন।';
+        }
+
+        if (!formData.message.trim()) {
+            errs.message = 'বার্তা লিখুন।';
+        }
+
+        setFieldErrors(errs);
+        return Object.keys(errs).length === 0;
+    };
+
     const handleChange = (e) => {
         const { name, value } = e.target;
+        // Restrict phone field to digits only
+        if (name === 'phone' && value !== '' && !/^\d*$/.test(value)) return;
         setFormData(prev => ({
             ...prev,
             [name]: value,
         }));
+        // Clear field error on change
+        if (fieldErrors[name]) {
+            setFieldErrors(prev => ({ ...prev, [name]: '' }));
+        }
         setError('');
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (!validateForm()) return;
         setLoading(true);
         setError('');
 
@@ -136,35 +180,37 @@ const ContactPage = () => {
                                                 value={formData.name}
                                                 onChange={handleChange}
                                                 placeholder="পূর্ণ নাম"
-                                                required
-                                                className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                                className={`w-full border rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 ${fieldErrors.name ? 'border-red-400 bg-red-50' : 'border-gray-200'}`}
                                             />
+                                            {fieldErrors.name && <p className="text-xs text-red-500 mt-1">{fieldErrors.name}</p>}
                                         </div>
                                         <div>
                                             <label className="block text-xs text-gray-500 mb-1">ফোন নম্বর</label>
                                             <input
-                                                type="tel"
+                                                type="text"
+                                                inputMode="numeric"
                                                 name="phone"
                                                 value={formData.phone}
                                                 onChange={handleChange}
                                                 placeholder="01XXXXXXXXX"
-                                                required
-                                                className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                                maxLength={11}
+                                                className={`w-full border rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 ${fieldErrors.phone ? 'border-red-400 bg-red-50' : 'border-gray-200'}`}
                                             />
+                                            {fieldErrors.phone && <p className="text-xs text-red-500 mt-1">{fieldErrors.phone}</p>}
                                         </div>
                                     </div>
 
                                     <div>
                                         <label className="block text-xs text-gray-500 mb-1">ইমেইল</label>
                                         <input
-                                            type="email"
+                                            type="text"
                                             name="email"
                                             value={formData.email}
                                             onChange={handleChange}
                                             placeholder="email@example.com"
-                                            required
-                                            className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                            className={`w-full border rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 ${fieldErrors.email ? 'border-red-400 bg-red-50' : 'border-gray-200'}`}
                                         />
+                                        {fieldErrors.email && <p className="text-xs text-red-500 mt-1">{fieldErrors.email}</p>}
                                     </div>
 
                                     <div>
@@ -173,8 +219,7 @@ const ContactPage = () => {
                                             name="subject"
                                             value={formData.subject}
                                             onChange={handleChange}
-                                            required
-                                            className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white"
+                                            className={`w-full border rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white ${fieldErrors.subject ? 'border-red-400 bg-red-50' : 'border-gray-200'}`}
                                         >
                                             <option value="">বিষয় নির্বাচন করুন</option>
                                             <option value="নিখোঁজ রিপোর্ট সহায়তা">নিখোঁজ রিপোর্ট সহায়তা</option>
@@ -182,6 +227,7 @@ const ContactPage = () => {
                                             <option value="অংশীদারিত্ব">অংশীদারিত্ব</option>
                                             <option value="সাধারণ জিজ্ঞাসা">সাধারণ জিজ্ঞাসা</option>
                                         </select>
+                                        {fieldErrors.subject && <p className="text-xs text-red-500 mt-1">{fieldErrors.subject}</p>}
                                     </div>
 
                                     <div>
@@ -192,9 +238,9 @@ const ContactPage = () => {
                                             onChange={handleChange}
                                             rows={4}
                                             placeholder="আপনার বার্তা লিখুন..."
-                                            required
-                                            className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
+                                            className={`w-full border rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none ${fieldErrors.message ? 'border-red-400 bg-red-50' : 'border-gray-200'}`}
                                         />
+                                        {fieldErrors.message && <p className="text-xs text-red-500 mt-1">{fieldErrors.message}</p>}
                                     </div>
 
                                     <button
