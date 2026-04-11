@@ -194,6 +194,16 @@ class ApiClient {
     }
   }
 
+  async delete(url, config = {}) {
+    try {
+      const response = await this.client.delete(url, config);
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
   // ─── Profile endpoints ───────────────────────────────────────────
 
   /**

@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import {
     Menu, X, Search, ChevronDown, User, Settings, FileText,
-    LogOut, Bell, LayoutDashboard, Shield
+    LogOut, Bell, LayoutDashboard, Shield, Heart
 } from 'lucide-react';
 import { useAuth } from '../helpers/AuthContext';
 
@@ -33,6 +33,7 @@ const Navbar = () => {
     const navLinks = [
         { to: '/search', label: 'নিখোঁজ তালিকা' },
         { to: '/found', label: 'উদ্ধারকৃত তালিকা' },
+        { to: '/success-stories', label: 'সাফল্যের গল্প', icon: Heart },
         { to: '/about', label: 'আমাদের সম্পর্কে' },
         { to: '/contact', label: 'যোগাযোগ' },
     ];
@@ -89,10 +90,11 @@ const Navbar = () => {
                                 key={l.to}
                                 to={l.to}
                                 className={({ isActive }) =>
-                                    `px-3 py-1.5 rounded-md text-sm font-medium transition-colors
+                                    `flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors
                                      ${isActive ? 'text-primary bg-primary/5' : 'text-gray-600 hover:text-primary hover:bg-gray-50'}`
                                 }
                             >
+                                {l.icon && <l.icon size={13} />}
                                 {l.label}
                             </NavLink>
                         ))}
@@ -197,7 +199,8 @@ const Navbar = () => {
                     <div className="md:hidden pb-4 space-y-1 border-t border-gray-50 pt-3">
                         {navLinks.map(l => (
                             <Link key={l.to} to={l.to} onClick={() => setMenuOpen(false)}
-                                className="block px-3 py-2 text-sm text-gray-600 hover:text-primary hover:bg-gray-50 rounded-md">
+                                className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-primary hover:bg-gray-50 rounded-md">
+                                {l.icon && <l.icon size={13} className="text-gray-400" />}
                                 {l.label}
                             </Link>
                         ))}

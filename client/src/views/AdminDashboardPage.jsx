@@ -4,8 +4,9 @@ import {
     LayoutDashboard, FileText, Users, BarChart2, Settings, LogOut,
     TrendingUp, TrendingDown, ArrowRight, CheckCircle,
     AlertTriangle, Eye, Shield, Bell, Zap,
-    ChevronRight, Menu, X, UserCheck, RefreshCw, Loader2, Search, Flag
+    ChevronRight, Menu, X, UserCheck, RefreshCw, Loader2, Search, Flag, Heart
 } from 'lucide-react';
+
 import { useAuth } from '../helpers/AuthContext';
 import AdminNavbar from '../Components/AdminNavbar';
 import apiClient from '../api';
@@ -341,6 +342,13 @@ export function AdminSidebar({ active, onNav, collapsed, onToggle }) {
                             {!collapsed && 'মডারেশন'}
                         </button>
                     </Link>
+                    <Link to="/admin/success-stories">
+    <button className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm
+                       font-medium text-gray-400 hover:bg-gray-800 hover:text-white transition-all">
+        <Heart size={16} className="flex-shrink-0" />
+        {!collapsed && 'সাফল্যের গল্প'}
+    </button>
+</Link>
                     <Link to="/admin/profile">
                         <button className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm
                                            font-medium text-gray-400 hover:bg-gray-800 hover:text-white transition-all">

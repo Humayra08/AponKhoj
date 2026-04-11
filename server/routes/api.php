@@ -8,6 +8,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\MissingPersonController;
 use App\Http\Controllers\FoundPersonController;
 use App\Http\Controllers\Auth\PasswordResetController;
+use App\Http\Controllers\Admin\SuccessStoryController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -71,6 +72,9 @@ Route::get('missing-reports/stats', [MissingPersonController::class, 'getPublicS
 Route::get('found-reports/published', [FoundPersonController::class, 'getPublished']);
 Route::get('found-reports/published/{id}', [FoundPersonController::class, 'getPublishedById']);
 
+Route::get('success-stories', [SuccessStoryController::class, 'publicIndex']);
+Route::get('success-stories/{id}', [SuccessStoryController::class, 'publicShow']);
+
 // Admin-only API routes
 Route::middleware(['auth:api', 'admin.only'])->group(function () {
     Route::get('admin/stats', [AdminController::class, 'stats']);
@@ -80,7 +84,16 @@ Route::middleware(['auth:api', 'admin.only'])->group(function () {
     Route::get('admin/moderation/reports', [AdminController::class, 'moderationReports']);
     Route::get('admin/moderation/flagged-users', [AdminController::class, 'moderationFlaggedUsers']);
     Route::get('admin/moderation/appeals', [AdminController::class, 'moderationAppeals']);
-    
+
+    // Success Stories Admin Routes
+    Route::get('admin/success-stories', [SuccessStoryController::class, 'index']);
+    Route::post('admin/success-stories', [SuccessStoryController::class, 'store']);
+    Route::get('admin/success-stories/{id}', [SuccessStoryController::class, 'show']);
+    Route::post('admin/success-stories/{id}', [SuccessStoryController::class, 'update']);
+    Route::patch('admin/success-stories/{id}/toggle-publish', [SuccessStoryController::class, 'togglePublish']);
+    Route::patch('admin/success-stories/{id}/toggle-featured', [SuccessStoryController::class, 'toggleFeatured']);
+    Route::delete('admin/success-stories/{id}', [SuccessStoryController::class, 'destroy']);
+
     // Missing Person Reports Admin Routes
     Route::get('admin/missing-reports/pending', [MissingPersonController::class, 'getPending']);
     Route::patch('admin/missing-reports/{id}/approve', [MissingPersonController::class, 'approve']);
