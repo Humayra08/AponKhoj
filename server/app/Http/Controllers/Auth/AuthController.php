@@ -9,6 +9,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
+use Laravel\Socialite\Facades\Socialite;
 
 class AuthController extends Controller
 {
@@ -17,8 +19,68 @@ class AuthController extends Controller
 
     public function __construct()
     {
-        $this->middleware('auth:api', ['except' => ['login', 'register', 'verifyEmail', 'resendCode']]);
+        $this->middleware('auth:api', ['except' => ['login', 'register', 'verifyEmail', 'resendCode', 'redirectToGoogle', 'handleGoogleCallback']]);
         $this->syncAdminAccounts();
+    }
+
+    public function redirectToGoogle()
+    {
+        return Socialite::driver('google')
+            ->stateless()
+            ->redirect();
+    }
+
+    public function handleGoogleCallback()
+    {
+        $frontendCallback = rtrim(config('app.frontend_url'), '/') . '/auth/google/callback';
+
+        try {
+            $googleUser = Socialite::driver('google')->stateless()->user();
+        } catch (\Throwable $e) {
+            return redirect()->to($frontendCallback . '?error=google_auth_failed');
+        }
+
+        $email = strtolower(trim((string) $googleUser->getEmail()));
+
+        if ($email === '') {
+            return redirect()->to($frontendCallback . '?error=google_email_not_provided');
+        }
+
+        if ($this->isAdminEmail($email)) {
+            return redirect()->to($frontendCallback . '?error=google_not_allowed_for_admin');
+        }
+
+        $user = User::where('email', $email)->first();
+
+        if ($user) {
+            if (empty($user->google_id)) {
+                $user->google_id = $googleUser->getId();
+            }
+
+            if (!$user->email_verified_at) {
+                $user->email_verified_at = now();
+            }
+
+            $user->save();
+        } else {
+            $user = User::create([
+                'name' => $googleUser->getName() ?: ($googleUser->getNickname() ?: 'Google User'),
+                'email' => $email,
+                'google_id' => $googleUser->getId(),
+                'password' => Hash::make(Str::random(32)),
+                'email_verified_at' => now(),
+            ]);
+        }
+
+        $token = auth()->login($user);
+        $encodedUser = rawurlencode(json_encode($this->serializeUser($user)));
+
+        return redirect()->to(
+            $frontendCallback
+            . '?token=' . rawurlencode($token)
+            . '&user=' . $encodedUser
+            . '&token_type=bearer'
+        );
     }
 
     public function login(Request $request)

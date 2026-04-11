@@ -4,6 +4,8 @@ import { Mail, Lock, Eye, EyeOff, Search, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../helpers/AuthContext';
 import apiClient from '../api';
+import { secrets } from '../secrets';
+import GoogleMark from '../Components/GoogleMark';
 
 
 const LoginPage = () => {
@@ -14,6 +16,14 @@ const LoginPage = () => {
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
     const { login } = useAuth();
+
+    const handleGoogleLogin = () => {
+        const backendBase = (secrets.backendEndpoint || 'http://localhost')
+            .replace(/\/+$/, '')
+            .replace(/\/api$/i, '');
+
+        window.location.href = `${backendBase}/auth/google`;
+    };
 
 const handleLogin = async (e) => {
     e.preventDefault();
@@ -119,6 +129,17 @@ const handleLogin = async (e) => {
                         className="w-full bg-primary hover:bg-primary-dark text-white py-2.5 rounded-lg font-medium transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
                         {loading ? <><Loader2 size={16} className="animate-spin" /> লগইন হচ্ছে...</> : 'লগইন করুন'}
                     </button>
+
+                    {loginType === 'user' && (
+                        <button
+                            type="button"
+                            onClick={handleGoogleLogin}
+                            className="w-full border border-gray-200 hover:border-gray-300 bg-white text-gray-700 py-2.5 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+                        >
+                            <GoogleMark className="w-5 h-5" />
+                            গুগল দিয়ে চালিয়ে যান
+                        </button>
+                    )}
                 </form>
 
                 {loginType === 'user' && (
