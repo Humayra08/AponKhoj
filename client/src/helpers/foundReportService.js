@@ -67,3 +67,57 @@ export const rematchFoundReport = async (id) => {
     return { success: false, matches: [] };
   }
 };
+
+export const getPublishedFoundReportById = async (id) => {
+  try {
+    const response = await apiClient.get(`/found-reports/published/${id}`);
+    return {
+      success: true,
+      report: response.report || null,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      report: null,
+      message: error.response?.data?.message || 'Failed to fetch report details',
+    };
+  }
+};
+
+export const getMyFoundAiMatchReports = async () => {
+  try {
+    const response = await apiClient.get('/found-reports/my/ai-matches');
+    return {
+      success: true,
+      reports: response.reports || [],
+      total: Number(response.total || 0),
+    };
+  } catch (error) {
+    return {
+      success: false,
+      reports: [],
+      total: 0,
+      message: error.response?.data?.message || 'Failed to fetch AI match reports',
+    };
+  }
+};
+
+export const getMyFoundAiMatchDetails = async (id) => {
+  try {
+    const response = await apiClient.get(`/found-reports/my/${id}/ai-matches`);
+    return {
+      success: true,
+      foundReport: response.found_report || null,
+      matches: response.matches || [],
+      total: Number(response.total || 0),
+    };
+  } catch (error) {
+    return {
+      success: false,
+      foundReport: null,
+      matches: [],
+      total: 0,
+      message: error.response?.data?.message || 'Failed to fetch AI match details',
+    };
+  }
+};

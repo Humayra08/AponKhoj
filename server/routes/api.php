@@ -58,6 +58,8 @@ Route::middleware('auth:api')->group(function () {
     // Found Person Reports Routes
     Route::post('found-reports', [FoundPersonController::class, 'store']);
     Route::get('found-reports/my', [FoundPersonController::class, 'getMyReports']);
+    Route::get('found-reports/my/ai-matches', [FoundPersonController::class, 'getMyAiMatches']);
+    Route::get('found-reports/my/{id}/ai-matches', [FoundPersonController::class, 'getMyAiMatchDetails']);
 });
 
 // Public missing reports feed
@@ -67,6 +69,7 @@ Route::get('missing-reports/stats', [MissingPersonController::class, 'getPublicS
 
 // Public found reports feed
 Route::get('found-reports/published', [FoundPersonController::class, 'getPublished']);
+Route::get('found-reports/published/{id}', [FoundPersonController::class, 'getPublishedById']);
 
 // Admin-only API routes
 Route::middleware(['auth:api', 'admin.only'])->group(function () {

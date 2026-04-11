@@ -54,6 +54,7 @@ export default function FoundListPage() {
                         foundAt: r.address || 'ঠিকানা উল্লেখ নেই',
                         clothing: r.physical_description || 'বিবরণ নেই',
                         foundDate: r.found_date || 'তারিখ নেই',
+                        photoUrl: r.photo_url || null,
                         seed: r.name || String(r.id),
                     };
                 });
@@ -108,7 +109,7 @@ export default function FoundListPage() {
             {/* Sketch Avatar */}
             <div className="relative h-52 overflow-hidden bg-[#e8f5f2] flex items-center justify-center">
                 <img
-                    src={avatar(r.seed, r.gender, r.age)}
+                    src={r.photoUrl || avatar(r.seed, r.gender, r.age)}
                     alt={r.name}
                     className="h-full w-full object-cover object-top group-hover:scale-105 transition-transform duration-300"
                     onError={e => { e.target.src = `https://api.dicebear.com/7.x/shapes/png?seed=${r.id}&size=300&backgroundColor=d4ede9`; }}
@@ -146,7 +147,7 @@ export default function FoundListPage() {
                         <span className="text-gray-300">{r.foundDate}</span>
                     </div>
                 </div>
-                <Link to={`/emergency/${r.id}`}
+                <Link to={`/found-report/${r.id}`}
                     className="flex items-center justify-center gap-1.5 w-full border border-accent-teal text-accent-teal text-xs py-2 rounded-xl hover:bg-accent-teal hover:text-white transition-colors font-medium">
                     বিস্তারিত দেখুন <ArrowRight size={12} />
                 </Link>

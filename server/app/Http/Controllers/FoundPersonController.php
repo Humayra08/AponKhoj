@@ -130,6 +130,100 @@ class FoundPersonController extends Controller
     }
 
     // ──────────────────────────────────────────────────────────
+    // USER: Get my approved found reports that have AI matches
+    // GET /api/found-reports/my/ai-matches
+    // ──────────────────────────────────────────────────────────
+    public function getMyAiMatches(Request $request)
+    {
+        $reports = FoundReport::where('user_id', $request->user()->id)
+            ->where('approved', true)
+            ->where('status', 'published')
+            ->latest('created_at')
+            ->get()
+            ->map(function (FoundReport $report) {
+                $query = $this->visibleMatchesQuery($report->id);
+                $matchCount = (clone $query)->count();
+                $topMatch = (clone $query)->first();
+
+                return [
+                    'id' => $report->id,
+                    'name' => $report->name,
+                    'approximate_age' => $report->approximate_age,
+                    'district' => $report->district,
+                    'photo_url' => $report->photo_url,
+                    'found_date' => optional($report->found_date)->format('Y-m-d'),
+                    'created_at' => optional($report->created_at)->format('Y-m-d H:i:s'),
+                    'ai_match_count' => $matchCount,
+                    'top_match_score' => $topMatch?->total_score,
+                ];
+            })
+            ->filter(fn(array $item) => ($item['ai_match_count'] ?? 0) > 0)
+            ->values();
+
+        return response()->json([
+            'success' => true,
+            'reports' => $reports,
+            'total' => $reports->count(),
+        ]);
+    }
+
+    // ──────────────────────────────────────────────────────────
+    // USER: Get AI match details for one of my approved found reports
+    // GET /api/found-reports/my/{id}/ai-matches
+    // ──────────────────────────────────────────────────────────
+    public function getMyAiMatchDetails(Request $request, $id)
+    {
+        $report = FoundReport::where('id', $id)
+            ->where('user_id', $request->user()->id)
+            ->where('approved', true)
+            ->where('status', 'published')
+            ->first();
+
+        if (!$report) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Report not found or not approved yet',
+            ], 404);
+        }
+
+        $matches = $this->visibleMatchesQuery($report->id)
+            ->limit(20)
+            ->get()
+            ->map(function ($match) {
+                $mr = $match->missingReport;
+
+                return [
+                    'missing_report_id'   => $match->missing_report_id,
+                    'missing_name'        => $mr?->name,
+                    'missing_age'         => $mr?->age,
+                    'missing_gender'      => $mr?->gender,
+                    'missing_district'    => $mr?->district,
+                    'missing_address'     => $mr?->address,
+                    'missing_photo_url'   => $mr?->photo_url,
+                    'missing_last_seen'   => optional($mr?->last_seen_date)?->format('Y-m-d'),
+                    'contact_phone'       => $mr?->contact_phone,
+                    'total_score'         => $match->total_score,
+                    'name_score'          => $match->name_score,
+                    'district_score'      => $match->district_score,
+                    'location_score'      => $match->location_score,
+                    'age_score'           => $match->age_score,
+                    'gender_score'        => $match->gender_score,
+                    'description_score'   => $match->description_score,
+                    'match_level'         => $match->match_level,
+                    'ai_reasoning'        => $match->ai_reasoning,
+                ];
+            })
+            ->values();
+
+        return response()->json([
+            'success' => true,
+            'found_report' => $this->formatReport($report),
+            'matches' => $matches,
+            'total' => $matches->count(),
+        ]);
+    }
+
+    // ──────────────────────────────────────────────────────────
     // ADMIN: Get pending found reports
     // GET /api/admin/found-reports/pending
     // ──────────────────────────────────────────────────────────
@@ -275,6 +369,28 @@ class FoundPersonController extends Controller
         ]);
     }
 
+    // PUBLIC: Get single published found report by id
+    // GET /api/found-reports/published/{id}
+    public function getPublishedById($id)
+    {
+        $report = FoundReport::where('id', $id)
+            ->where('approved', true)
+            ->where('status', 'published')
+            ->first();
+
+        if (!$report) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Report not found',
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'report' => $this->formatReport($report),
+        ]);
+    }
+
     // ── Helpers ───────────────────────────────────────────────
 
     private function formatReport(FoundReport $r): array
@@ -332,5 +448,16 @@ class FoundPersonController extends Controller
                 ];
             })
             ->toArray();
+    }
+
+    private function visibleMatchesQuery(int $foundReportId)
+    {
+        return FoundMatch::where('found_report_id', $foundReportId)
+            ->whereHas('missingReport', function ($query) {
+                $query->where('approved', true)
+                    ->where('status', 'published');
+            })
+            ->with('missingReport')
+            ->orderByDesc('total_score');
     }
 }

@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use App\Models\MissingReport;
+use App\Models\FoundReport;
 
 class ProfileController extends Controller
 {
@@ -141,18 +142,43 @@ class ProfileController extends Controller
     {
         $user = $request->user();
 
-        $totalReports = MissingReport::where('user_id', $user->id)->count();
-        $pendingReports = MissingReport::where('user_id', $user->id)
+        $missingTotal = MissingReport::where('user_id', $user->id)->count();
+        $foundTotal = FoundReport::where('user_id', $user->id)->count();
+        $totalReports = $missingTotal + $foundTotal;
+
+        $missingPending = MissingReport::where('user_id', $user->id)
             ->where('status', 'pending')
             ->where('approved', false)
             ->count();
-        $approvedReports = MissingReport::where('user_id', $user->id)
+
+        $foundPending = FoundReport::where('user_id', $user->id)
+            ->where('status', 'pending')
+            ->where('approved', false)
+            ->count();
+
+        $pendingReports = $missingPending + $foundPending;
+
+        $missingApproved = MissingReport::where('user_id', $user->id)
             ->where('status', 'published')
             ->where('approved', true)
             ->count();
-        $rejectedReports = MissingReport::where('user_id', $user->id)
+
+        $foundApproved = FoundReport::where('user_id', $user->id)
+            ->where('status', 'published')
+            ->where('approved', true)
+            ->count();
+
+        $approvedReports = $missingApproved + $foundApproved;
+
+        $missingRejected = MissingReport::where('user_id', $user->id)
             ->where('status', 'rejected')
             ->count();
+
+        $foundRejected = FoundReport::where('user_id', $user->id)
+            ->where('status', 'rejected')
+            ->count();
+
+        $rejectedReports = $missingRejected + $foundRejected;
 
         return response()->json([
             'totalReports' => $totalReports,
