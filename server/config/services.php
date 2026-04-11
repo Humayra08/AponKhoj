@@ -2,18 +2,6 @@
 
 return [
 
-    /*
-    |--------------------------------------------------------------------------
-    | Third Party Services
-    |--------------------------------------------------------------------------
-    |
-    | This file is for storing the credentials for third party services such
-    | as Mailgun, Postmark, AWS and more. This file provides the de facto
-    | location for this type of information, allowing packages to have
-    | a conventional file to locate the various service credentials.
-    |
-    */
-
     'mailgun' => [
         'domain' => env('MAILGUN_DOMAIN'),
         'secret' => env('MAILGUN_SECRET'),
@@ -30,10 +18,24 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+
     'google' => [
-        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_id'     => env('GOOGLE_CLIENT_ID'),
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),
-        'redirect' => env('GOOGLE_REDIRECT_URI'),
+        'redirect'      => env('GOOGLE_REDIRECT_URI'),
     ],
+
+
+    'openrouter' => [
+       'api_key' => env('OPENROUTER_API_KEY', ''),
+   ],
+
+
+   'giosms' => [
+        'base_url' => env('GIOSMS_BASE_URL', 'https://api.giosms.com/api/v1'),
+        'token'    => env('GIOSMS_TOKEN'),
+       'sender_id' => env('GIOSMS_SENDER_ID', 'nonmasking'),
+    ],
+   
 
 ];
