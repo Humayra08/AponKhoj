@@ -8,6 +8,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\MissingPersonController;
 use App\Http\Controllers\FoundPersonController;
 use App\Http\Controllers\Auth\PasswordResetController;
+use App\Http\Controllers\Admin\SuccessStoryController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -45,6 +46,12 @@ Route::middleware('auth:api')->group(function () {
         return $request->user();
     });
 
+    Route::get('admin/success-stories', [SuccessStoryController::class, 'index']);
+    Route::post('admin/success-stories', [SuccessStoryController::class, 'store']);
+    Route::get('admin/success-stories/{id}', [SuccessStoryController::class, 'show']);
+    Route::post('admin/success-stories/{id}', [SuccessStoryController::class, 'update']);
+    Route::patch('admin/success-stories/{id}/toggle-publish', [SuccessStoryController::class, 'togglePublish']);
+    Route::delete('admin/success-stories/{id}', [SuccessStoryController::class, 'destroy']);
     Route::get('profile', [ProfileController::class, 'show']);
     Route::put('profile', [ProfileController::class, 'update']);
     Route::patch('profile', [ProfileController::class, 'update']);
@@ -70,6 +77,9 @@ Route::get('missing-reports/stats', [MissingPersonController::class, 'getPublicS
 // Public found reports feed
 Route::get('found-reports/published', [FoundPersonController::class, 'getPublished']);
 Route::get('found-reports/published/{id}', [FoundPersonController::class, 'getPublishedById']);
+
+Route::get('success-stories', [SuccessStoryController::class, 'publicIndex']);
+Route::get('success-stories/{id}', [SuccessStoryController::class, 'publicShow']);
 
 // Admin-only API routes
 Route::middleware(['auth:api', 'admin.only'])->group(function () {

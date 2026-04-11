@@ -1,241 +1,356 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, ArrowRight, Plus, Heart, Share2 } from 'lucide-react';
+import {
+    Heart, Search, MapPin, Calendar, ChevronRight,
+    ArrowRight, Star, Filter, X, BookOpen, Loader2
+} from 'lucide-react';
+import apiClient from '../api';
 
-const STORIES = [
-    {
-        id: 1, division: 'ঢাকা',
-        title: '১০ বছর পর মায়ের কোলে ফিরে এলো আরিফ',
-        desc: 'ঢাকা এক দশকের অনুসন্ধান পর আপনখোঁজের AI-চালিত প্ল্যাটফর্মের মাধ্যমে আরিফকে তার পরিবারের সাথে পুনর্মিলিত করা হয়েছে। এক আনন্দময় মুহূর্তে বিদায় লগ্নে এই পরিবার...',
-        date: '১০ মে, ২০২৫',
-        img: 'https://images.unsplash.com/photo-1609220136736-443140cffec6?w=600&q=80',
-        tag: 'পুনর্মিলিত',
-    },
-    {
-        id: 2, division: 'চট্টগ্রাম',
-        title: 'নিখোঁজ বৃদ্ধার আপন ঠিকানায় প্রত্যাবর্তন',
-        desc: 'বুড়ি ফিরিয়ে দেওয়া হলো তার পরিবারের কাছে। ছিনিয়ে নেওয়া আনন্দের হালহকিকত এক কান্নার পটিয়ার হোম থেকে...',
-        date: '২ মে, ২০২৫',
-        img: 'https://images.unsplash.com/photo-1566616213894-2d4e1baee5d8?w=600&q=80',
-        tag: 'পুনর্মিলিত',
-    },
-    {
-        id: 3, division: 'রাজশাহী',
-        title: 'সালামের ৩ বছরের অপেক্ষার অবসান',
-        desc: 'রাজশাহী সুশান্ত হারানো তার সালাম বেগমকে তার সন্তান উচ্চমাধ্যমিকের পদধ্বনি শুনে চিনতে পারেন। তিন বছরের প্রতীক্ষা...',
-        date: '২৫ এপ্রিল, ২০২৫',
-        img: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=600&q=80',
-        tag: 'পুনর্মিলিত',
-    },
-    {
-        id: 4, division: 'খুলনা',
-        title: 'হারানো কন্যাকে ফিরে পেল খুলনার পরিবার',
-        desc: 'সাত বছর আগে হারিয়ে যাওয়া রুনু এখন তার মা-বাবার কাছে। আপনখোঁজের ফেস রিকগনিশন ম্যাচিং এই অসম্ভবকে সম্ভব করেছে...',
-        date: '১৮ এপ্রিল, ২০২৫',
-        img: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=600&q=80',
-        tag: 'পুনর্মিলিত',
-    },
-    {
-        id: 5, division: 'বরিশাল',
-        title: 'বন্যার স্রোতে হারানো শিশু ফিরল পরিবারে',
-        desc: 'বরিশালের ভয়াবহ বন্যায় হারিয়ে যাওয়া ছোট্ট মিথিলা ছয় মাস পরে পাওয়া গেল। স্থানীয় হাসপাতাল এবং আপনখোঁজের নেটওয়ার্ক মিলে...',
-        date: '১০ এপ্রিল, ২০২৫',
-        img: 'https://images.unsplash.com/photo-1516627145497-ae6968895b74?w=600&q=80',
-        tag: 'পুনর্মিলিত',
-    },
-    {
-        id: 6, division: 'সিলেট',
-        title: 'সিলেটে চা বাগানে পাওয়া গেল বৃদ্ধ আব্দুল',
-        desc: 'স্মৃতিভ্রংশ হওয়া আব্দুল সাহেব তিন মাস ধরে নিখোঁজ ছিলেন। আপনখোঁজে এলাকার মানুষের সহায়তায় অবশেষে খুঁজে পাওয়া গেছে...',
-        date: '২ এপ্রিল, ২০২৫',
-        img: 'https://images.unsplash.com/photo-1499996860823-5214fcc65f8f?w=600&q=80',
-        tag: 'পুনর্মিলিত',
-    },
-    {
-        id: 7, division: 'রংপুর',
-        title: 'ভিন্ন দেশে হারানো নাদিম খুঁজে পেল স্বজন',
-        desc: 'রংপুরের নাদিম ঢাকায় কাজের খোঁজে এসে কিছুদিন পর নিখোঁজ হয়ে যায়। পরিবার আপনখোঁজে রিপোর্ট করার পাঁচ দিনের মাথায়...',
-        date: '২৫ মার্চ, ২০২৫',
-        img: 'https://images.unsplash.com/photo-1521566652839-697aa473761a?w=600&q=80',
-        tag: 'পুনর্মিলিত',
-    },
-    {
-        id: 8, division: 'ময়মনসিংহ',
-        title: 'দুই বছর পর ফিরল কিশোরী রিমা',
-        desc: 'ময়মনসিংহ থেকে নিখোঁজ হওয়া রিমা দুই বছর পর পরিবারের কোলে ফিরেছে। তার পরিচয় নিশ্চিত করেছে পুলিশ ও আপনখোঁজের ভেরিফিকেশন দল...',
-        date: '১৫ মার্চ, ২০২৫',
-        img: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=600&q=80',
-        tag: 'পুনর্মিলিত',
-    },
-    {
-        id: 9, division: 'ঢাকা',
-        title: 'আলোর পথে মিলন — গাজীপুরের জামাল পরিবার',
-        desc: 'গাজীপুরের জামাল তার মানসিক ভারসাম্যহীন বাবাকে খুঁজে পেলেন আপনখোঁজের SMS আলার্টের মাধ্যমে। দুই মাসের প্রতীক্ষার অবসান...',
-        date: '৫ মার্চ, ২০২৫',
-        img: 'https://images.unsplash.com/photo-1525182008055-f88b95ff7980?w=600&q=80',
-        tag: 'পুনর্মিলিত',
-    },
+const DIVISIONS = [
+    'ঢাকা', 'চট্টগ্রাম', 'রাজশাহী', 'খুলনা',
+    'বরিশাল', 'সিলেট', 'রংপুর', 'ময়মনসিংহ',
 ];
 
-const DIVISIONS = ['সব গল্প', 'ঢাকা', 'চট্টগ্রাম', 'রাজশাহী', 'খুলনা', 'বরিশাল', 'সিলেট', 'রংপুর', 'ময়মনসিংহ'];
-const PER_PAGE = 6;
+// ── Format Bangla date ───────────────────────────────────────────────
+function formatDate(dateStr) {
+    if (!dateStr) return null;
+    try {
+        return new Intl.DateTimeFormat('bn-BD', {
+            day: 'numeric', month: 'long', year: 'numeric',
+        }).format(new Date(dateStr));
+    } catch {
+        return dateStr;
+    }
+}
 
-export default function SuccessStoriesPage() {
-    const [activeDiv, setActiveDiv] = useState('সব গল্প');
-    const [page, setPage] = useState(1);
+// ── Story Card ───────────────────────────────────────────────────────
+function StoryCard({ story, featured = false }) {
+    return (
+        <Link to={`/success-stories/${story.id}`}
+            className={`group block bg-white rounded-2xl border border-gray-100 overflow-hidden
+                        hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200
+                        ${featured ? 'ring-2 ring-amber-200' : ''}`}>
+            {/* Image */}
+            <div className="relative overflow-hidden bg-gray-100"
+                style={{ height: featured ? '240px' : '180px' }}>
+                {story.cover_image_url ? (
+                    <img src={story.cover_image_url} alt={story.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/5 to-primary/10">
+                        <BookOpen size={40} className="text-primary/30" />
+                    </div>
+                )}
+                {/* Gradient overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
 
-    const filtered = activeDiv === 'সব গল্প' ? STORIES : STORIES.filter(s => s.division === activeDiv);
-    const totalPages = Math.ceil(filtered.length / PER_PAGE);
-    const paginated = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+                {/* Badges */}
+                <div className="absolute top-3 left-3 flex gap-2">
+                    {featured && (
+                        <span className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-400 text-amber-900">
+                            <Star size={10} fill="currentColor" /> বৈশিষ্ট্যযুক্ত
+                        </span>
+                    )}
+                    <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-green-500 text-white">
+                        {story.tag || 'পুনর্মিলিত'}
+                    </span>
+                </div>
+            </div>
+
+            {/* Content */}
+            <div className="p-4">
+                <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-2">
+                    <MapPin size={11} />
+                    <span>{story.division}{story.district ? `, ${story.district}` : ''}</span>
+                    {story.found_date && (
+                        <>
+                            <span>•</span>
+                            <Calendar size={11} />
+                            <span>{formatDate(story.found_date)}</span>
+                        </>
+                    )}
+                </div>
+
+                <h3 className={`font-bold text-gray-800 leading-snug group-hover:text-primary transition-colors line-clamp-2 mb-2
+                    ${featured ? 'text-base' : 'text-sm'}`}>
+                    {story.title}
+                </h3>
+
+                <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed mb-3">
+                    {story.excerpt}
+                </p>
+
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                        <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
+                            <Heart size={11} className="text-primary" />
+                        </div>
+                        <span className="text-xs font-semibold text-gray-600">{story.person_name}</span>
+                        {story.person_age && (
+                            <span className="text-xs text-gray-400">· {story.person_age} বছর</span>
+                        )}
+                    </div>
+                    <span className="flex items-center gap-1 text-xs font-bold text-primary group-hover:gap-2 transition-all">
+                        পড়ুন <ArrowRight size={12} />
+                    </span>
+                </div>
+            </div>
+        </Link>
+    );
+}
+
+// ── Story Detail Modal ───────────────────────────────────────────────
+function StoryDetailModal({ storyId, onClose }) {
+    const [story, setStory]   = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        (async () => {
+            try {
+                const data = await apiClient.get(`/success-stories/${storyId}`);
+                setStory(data);
+            } catch {
+                onClose();
+            } finally {
+                setLoading(false);
+            }
+        })();
+    }, [storyId]);
 
     return (
-        <div className="bg-background min-h-screen">
-            <div className="max-w-7xl mx-auto px-4 py-10">
-
-                {/* ── Page Header ── */}
-                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-8">
-                    <div>
-                        <h1 className="text-4xl font-black text-gray-800 mb-2">সাফল্যের গল্প</h1>
-                        <p className="text-sm text-gray-500 max-w-lg leading-relaxed">
-                            আপনখোঁজ-এর মাধ্যমে প্রিয়জনদের পরিবারে ফিরে আসার অনুপ্রেরণামূলক কাহিনী।
-                            প্রতিটি গল্প আমাদের পথচলার নতুন শক্তি যোগায়।
-                        </p>
-                    </div>
-                    <button className="flex-shrink-0 inline-flex items-center gap-2 bg-secondary text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-secondary-dark transition-colors shadow-sm whitespace-nowrap">
-                        <Plus size={16} />
-                        একটি গল্প শেয়ার করুন
-                    </button>
-                </div>
-
-                {/* ── Division Filter ── */}
-                <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-4 mb-8">
-                    <p className="text-xs text-gray-500 mb-3 font-medium">বিভাগ অনুযায়ী খুঁজুন</p>
-                    <div className="flex flex-wrap gap-2">
-                        {DIVISIONS.map(d => (
-                            <button
-                                key={d}
-                                onClick={() => { setActiveDiv(d); setPage(1); }}
-                                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all border ${activeDiv === d
-                                    ? 'bg-secondary text-white border-secondary shadow-sm'
-                                    : 'bg-white text-gray-600 border-gray-200 hover:border-secondary hover:text-secondary'
-                                    }`}
-                            >
-                                {d}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-
-                {/* ── Stories Grid ── */}
-                {paginated.length === 0 ? (
-                    <div className="text-center py-20">
-                        <div className="text-4xl mb-3">📖</div>
-                        <p className="text-gray-500 font-medium">এই বিভাগে কোনো গল্প নেই</p>
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 p-0 sm:p-4"
+            onClick={e => e.target === e.currentTarget && onClose()}>
+            <div className="bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-2xl max-h-[90vh] flex flex-col">
+                {loading || !story ? (
+                    <div className="flex items-center justify-center py-20">
+                        <Loader2 size={28} className="animate-spin text-primary" />
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-                        {paginated.map(story => (
-                            <article
-                                key={story.id}
-                                className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow group"
-                            >
-                                {/* Image */}
-                                <div className="relative h-52 overflow-hidden">
-                                    <img
-                                        src={story.img}
-                                        alt={story.title}
-                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                        onError={e => { e.target.src = `https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=600&q=80`; }}
-                                    />
-                                    {/* Badge */}
-                                    <span className="absolute top-2 right-2 bg-secondary text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow">
-                                        {story.tag}
-                                    </span>
-                                    {/* Gradient overlay */}
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
+                    <>
+                        {/* Cover */}
+                        <div className="relative h-56 bg-gray-100 flex-shrink-0 rounded-t-2xl overflow-hidden">
+                            {story.cover_image_url ? (
+                                <img src={story.cover_image_url} alt={story.title}
+                                    className="w-full h-full object-cover" />
+                            ) : (
+                                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/5 to-primary/10">
+                                    <BookOpen size={48} className="text-primary/20" />
                                 </div>
-
-                                {/* Content */}
-                                <div className="p-5">
-                                    {/* Location */}
-                                    <div className="flex items-center gap-1 text-xs text-gray-400 mb-2">
-                                        <MapPin size={11} className="text-secondary flex-shrink-0" />
-                                        {story.division} বিভাগ
-                                    </div>
-
-                                    {/* Title */}
-                                    <h2 className="font-black text-gray-800 text-base leading-snug mb-2 line-clamp-2">
-                                        {story.title}
-                                    </h2>
-
-                                    {/* Description */}
-                                    <p className="text-xs text-gray-500 leading-relaxed mb-4 line-clamp-3">
-                                        {story.desc}
-                                    </p>
-
-                                    {/* Footer row */}
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-[11px] text-gray-300">{story.date}</span>
-                                        <div className="flex items-center gap-3">
-                                            <button className="text-gray-300 hover:text-accent-red transition-colors">
-                                                <Heart size={13} />
-                                            </button>
-                                            <button className="text-gray-300 hover:text-primary transition-colors">
-                                                <Share2 size={13} />
-                                            </button>
-                                            <Link
-                                                to={`/success-stories/${story.id}`}
-                                                className="flex items-center gap-1 text-secondary text-xs font-bold hover:underline"
-                                            >
-                                                বিস্তারিত <ArrowRight size={12} />
-                                            </Link>
-                                        </div>
-                                    </div>
-                                </div>
-                            </article>
-                        ))}
-                    </div>
-                )}
-
-                {/* ── Pagination ── */}
-                {totalPages > 1 && (
-                    <div className="flex items-center justify-center gap-1">
-                        <button
-                            onClick={() => {
-                                setPage(p => Math.max(1, p - 1));
-                                window.scrollTo({ top: 0, behavior: 'smooth' });
-                            }}
-                            disabled={page === 1}
-                            className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:border-secondary hover:text-secondary disabled:opacity-30 transition-colors text-sm"
-                        >‹</button>
-
-                        {Array.from({ length: totalPages }, (_, i) => i + 1).map(n => (
-                            <button
-                                key={n}
-                                onClick={() => {
-                                    setPage(n);
-                                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                                }}
-                                className={`w-8 h-8 rounded-lg text-sm font-medium transition-all ${page === n
-                                    ? 'bg-secondary text-white shadow-sm'
-                                    : 'border border-gray-200 text-gray-600 hover:border-secondary hover:text-secondary'
-                                    }`}
-                            >
-                                {n}
+                            )}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                            <button onClick={onClose}
+                                className="absolute top-3 right-3 w-8 h-8 bg-white/90 rounded-full flex items-center justify-center shadow hover:bg-white transition-colors">
+                                <X size={16} className="text-gray-600" />
                             </button>
-                        ))}
+                            <div className="absolute bottom-4 left-4 right-4">
+                                <span className="inline-block px-2.5 py-1 rounded-full text-xs font-bold bg-green-500 text-white mb-2">
+                                    {story.tag}
+                                </span>
+                                <h2 className="text-white font-black text-lg leading-snug">{story.title}</h2>
+                            </div>
+                        </div>
 
-                        <button
-                            onClick={() => {
-                                setPage(p => Math.min(totalPages, p + 1));
-                                window.scrollTo({ top: 0, behavior: 'smooth' });
-                            }}
-                            disabled={page === totalPages}
-                            className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:border-secondary hover:text-secondary disabled:opacity-30 transition-colors text-sm"
-                        >›</button>
-                    </div>
+                        {/* Body */}
+                        <div className="overflow-y-auto flex-1 px-6 py-5">
+                            {/* Meta */}
+                            <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500 mb-5 pb-4 border-b border-gray-100">
+                                <span className="flex items-center gap-1"><Heart size={12} className="text-primary" /> {story.person_name}</span>
+                                {story.person_age && <span>{story.person_age} বছর</span>}
+                                <span className="flex items-center gap-1"><MapPin size={12} /> {story.division}</span>
+                                {story.found_date && (
+                                    <span className="flex items-center gap-1">
+                                        <Calendar size={12} /> {formatDate(story.found_date)}
+                                    </span>
+                                )}
+                            </div>
+
+                            {/* Story text */}
+                            <div className="prose prose-sm max-w-none text-gray-700 leading-relaxed text-sm whitespace-pre-wrap">
+                                {story.story}
+                            </div>
+
+                            {/* Duration */}
+                            {story.missing_date && story.found_date && (
+                                <div className="mt-5 bg-green-50 rounded-xl px-4 py-3 text-sm text-green-700 font-medium">
+                                    🎉 {formatDate(story.missing_date)} থেকে {formatDate(story.found_date)} — সফলভাবে পুনর্মিলিত
+                                </div>
+                            )}
+                        </div>
+                    </>
                 )}
             </div>
+        </div>
+    );
+}
+
+// ── Main Page ────────────────────────────────────────────────────────
+export default function SuccessStoriesPage() {
+    const [stories, setStories]     = useState([]);
+    const [meta, setMeta]           = useState({ total: 0, last_page: 1 });
+    const [loading, setLoading]     = useState(true);
+    const [page, setPage]           = useState(1);
+    const [search, setSearch]       = useState('');
+    const [division, setDivision]   = useState('');
+    const [activeStoryId, setActiveStoryId] = useState(null);
+
+    const fetchStories = useCallback(async (p = 1, q = search, div = division) => {
+        setLoading(true);
+        try {
+            const params = new URLSearchParams({ page: p });
+            if (q)   params.set('search', q);
+            if (div) params.set('division', div);
+            const data = await apiClient.get(`/success-stories?${params}`);
+            setStories(data.data || []);
+            setMeta({ total: data.total || 0, last_page: data.last_page || 1 });
+            setPage(p);
+        } catch {
+            // toasted by apiClient
+        } finally {
+            setLoading(false);
+        }
+    }, [search, division]);
+
+    useEffect(() => { fetchStories(1, search, division); }, [search, division]);
+
+    const featured = stories.filter(s => s.featured);
+    const regular  = stories.filter(s => !s.featured);
+
+    return (
+        <div className="min-h-screen bg-gray-50">
+
+            {/* Hero Banner */}
+            <div className="bg-gradient-to-br from-primary to-primary/80 text-white">
+                <div className="max-w-5xl mx-auto px-4 sm:px-6 py-14 text-center">
+                    <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur px-4 py-1.5 rounded-full text-sm font-semibold mb-5">
+                        <Heart size={14} fill="currentColor" /> পুনর্মিলনের অনুপ্রেরণামূলক গল্প
+                    </div>
+                    <h1 className="text-3xl sm:text-4xl font-black mb-4 leading-tight">
+                        সাফল্যের গল্প
+                    </h1>
+                    <p className="text-base text-white/80 max-w-xl mx-auto mb-8">
+                        আপনখোঁজের মাধ্যমে নিখোঁজ হওয়া প্রিয়জনদের পুনরায় পরিবারে ফিরে আসার সত্যিকারের গল্পগুলো পড়ুন।
+                    </p>
+
+                    {/* Search bar */}
+                    <div className="max-w-md mx-auto relative">
+                        <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                        <input value={search} onChange={e => setSearch(e.target.value)}
+                            placeholder="নাম বা গল্পের বিষয় খুঁজুন..."
+                            className="w-full pl-11 pr-4 py-3 rounded-2xl text-sm text-gray-800 bg-white shadow-lg outline-none focus:ring-2 focus:ring-white/50 placeholder-gray-400" />
+                        {search && (
+                            <button onClick={() => setSearch('')}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                                <X size={14} />
+                            </button>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
+
+                {/* Division filter chips */}
+                <div className="flex gap-2 flex-wrap mb-8">
+                    <button onClick={() => setDivision('')}
+                        className={`px-4 py-1.5 rounded-full text-xs font-bold transition-colors border
+                            ${!division ? 'bg-primary text-white border-primary' : 'bg-white text-gray-600 border-gray-200 hover:border-primary hover:text-primary'}`}>
+                        সব বিভাগ
+                    </button>
+                    {DIVISIONS.map(d => (
+                        <button key={d} onClick={() => setDivision(d === division ? '' : d)}
+                            className={`px-4 py-1.5 rounded-full text-xs font-bold transition-colors border
+                                ${division === d ? 'bg-primary text-white border-primary' : 'bg-white text-gray-600 border-gray-200 hover:border-primary hover:text-primary'}`}>
+                            {d}
+                        </button>
+                    ))}
+                </div>
+
+                {loading ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                        {[...Array(6)].map((_, i) => (
+                            <div key={i} className="bg-white rounded-2xl border border-gray-100 overflow-hidden animate-pulse">
+                                <div className="h-44 bg-gray-100" />
+                                <div className="p-4 space-y-2">
+                                    <div className="h-3 bg-gray-100 rounded w-1/2" />
+                                    <div className="h-4 bg-gray-100 rounded w-full" />
+                                    <div className="h-3 bg-gray-100 rounded w-5/6" />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                ) : stories.length === 0 ? (
+                    <div className="text-center py-20">
+                        <BookOpen size={48} className="text-gray-200 mx-auto mb-4" />
+                        <p className="text-gray-500 font-semibold text-lg">কোনো গল্প পাওয়া যায়নি</p>
+                        <p className="text-sm text-gray-400 mt-2">অনুসন্ধান পরিবর্তন করে আবার চেষ্টা করুন</p>
+                        {(search || division) && (
+                            <button onClick={() => { setSearch(''); setDivision(''); }}
+                                className="mt-4 px-5 py-2 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary/90 transition-colors">
+                                ফিল্টার সরান
+                            </button>
+                        )}
+                    </div>
+                ) : (
+                    <>
+                        {/* Featured stories */}
+                        {featured.length > 0 && (
+                            <div className="mb-8">
+                                <div className="flex items-center gap-2 mb-4">
+                                    <Star size={15} className="text-amber-500" fill="currentColor" />
+                                    <h2 className="text-sm font-black text-gray-700 uppercase tracking-wider">বৈশিষ্ট্যযুক্ত গল্প</h2>
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                    {featured.map(s => (
+                                        <div key={s.id} onClick={() => setActiveStoryId(s.id)} className="cursor-pointer">
+                                            <StoryCard story={s} featured />
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* All stories */}
+                        {regular.length > 0 && (
+                            <div>
+                                {featured.length > 0 && (
+                                    <h2 className="text-sm font-black text-gray-700 uppercase tracking-wider mb-4">সব গল্প</h2>
+                                )}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                                    {regular.map(s => (
+                                        <div key={s.id} onClick={() => setActiveStoryId(s.id)} className="cursor-pointer">
+                                            <StoryCard story={s} />
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Pagination */}
+                        {meta.last_page > 1 && (
+                            <div className="flex items-center justify-center gap-3 mt-10">
+                                <button onClick={() => fetchStories(page - 1)} disabled={page === 1}
+                                    className="px-5 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600
+                                               hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                                    ← আগে
+                                </button>
+                                <span className="text-sm text-gray-500 font-medium">{page} / {meta.last_page}</span>
+                                <button onClick={() => fetchStories(page + 1)} disabled={page === meta.last_page}
+                                    className="px-5 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600
+                                               hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                                    পরে →
+                                </button>
+                            </div>
+                        )}
+                    </>
+                )}
+            </div>
+
+            {/* Story detail modal */}
+            {activeStoryId && (
+                <StoryDetailModal
+                    storyId={activeStoryId}
+                    onClose={() => setActiveStoryId(null)} />
+            )}
         </div>
     );
 }
