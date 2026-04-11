@@ -12,6 +12,7 @@ import UserProfilePage from './views/UserProfilePage';
 import AdminDashboardPage from './views/AdminDashboardPage';
 import AdminProfilePage from './views/AdminProfilePage';
 import AdminModerationPage from './views/AdminModerationPage';
+import AdminSuccessStoriesPage from './views/AdminSuccessStoriesPage';
 import { AuthProvider } from './helpers/AuthContext';
 import AdminRoute from './helpers/AdminRoute';
 import ProtectedRoute from './helpers/ProtectedRoute';
@@ -19,6 +20,7 @@ import HelpPage from './views/HelpPage';
 import FoundListPage from './views/FoundListPage';
 import AboutPage from './views/AboutPage';
 import SuccessStoriesPage from './views/SuccessStoriesPage';
+import SuccessStoryDetailPage from './views/SuccessStoryDetailPage';
 import ReportMissingPage from './views/ReportMissingPage';
 import './index.css';
 import { Toaster } from 'react-hot-toast';
@@ -58,21 +60,21 @@ function AppShell() {
 
           <Route path="/about" element={<AboutPage />} />
           <Route path="/success-stories" element={<SuccessStoriesPage />} />
+          <Route path="/success-stories/:id" element={<SuccessStoryDetailPage />} />
           <Route path="/report-missing" element={<ReportMissingPage />} />
           <Route path="/profile" element={<ProtectedRoute><UserProfilePage /></ProtectedRoute>} />
-          <Route path="/report-found" element={<ReportFoundPage />} />
           <Route path="/search" element={<SearchPage />} />
           <Route path="/emergency/:id" element={<EmergencyDetailsPage />} />
           <Route path="/found-report/:id" element={<FoundReportDetailsPage />} />
           <Route path="/legal-aid" element={<LegalAidPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/contact" element={<ContactPage />} />
-          {/* Add more routes here */}
 
           {/* Admin-only routes */}
           <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboardPage /></AdminRoute>} />
           <Route path="/admin/profile" element={<AdminRoute><AdminProfilePage /></AdminRoute>} />
           <Route path="/admin/moderation" element={<AdminRoute><AdminModerationPage /></AdminRoute>} />
+          <Route path="/admin/success-stories" element={<AdminRoute><AdminSuccessStoriesPage /></AdminRoute>} />
         </Routes>
       </main>
       {!isAdminRoute && <Footer />}

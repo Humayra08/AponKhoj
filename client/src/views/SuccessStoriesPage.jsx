@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import {
-    Heart, Search, MapPin, Calendar, ChevronRight,
-    ArrowRight, Star, Filter, X, BookOpen, Loader2
+    Heart, Search, MapPin, Calendar,
+    ArrowRight, Star, X, BookOpen, Loader2
 } from 'lucide-react';
 import apiClient from '../api';
 
@@ -99,90 +99,6 @@ function StoryCard({ story, featured = false }) {
     );
 }
 
-// ── Story Detail Modal ───────────────────────────────────────────────
-function StoryDetailModal({ storyId, onClose }) {
-    const [story, setStory]   = useState(null);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        (async () => {
-            try {
-                const data = await apiClient.get(`/success-stories/${storyId}`);
-                setStory(data);
-            } catch {
-                onClose();
-            } finally {
-                setLoading(false);
-            }
-        })();
-    }, [storyId]);
-
-    return (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 p-0 sm:p-4"
-            onClick={e => e.target === e.currentTarget && onClose()}>
-            <div className="bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-2xl max-h-[90vh] flex flex-col">
-                {loading || !story ? (
-                    <div className="flex items-center justify-center py-20">
-                        <Loader2 size={28} className="animate-spin text-primary" />
-                    </div>
-                ) : (
-                    <>
-                        {/* Cover */}
-                        <div className="relative h-56 bg-gray-100 flex-shrink-0 rounded-t-2xl overflow-hidden">
-                            {story.cover_image_url ? (
-                                <img src={story.cover_image_url} alt={story.title}
-                                    className="w-full h-full object-cover" />
-                            ) : (
-                                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/5 to-primary/10">
-                                    <BookOpen size={48} className="text-primary/20" />
-                                </div>
-                            )}
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                            <button onClick={onClose}
-                                className="absolute top-3 right-3 w-8 h-8 bg-white/90 rounded-full flex items-center justify-center shadow hover:bg-white transition-colors">
-                                <X size={16} className="text-gray-600" />
-                            </button>
-                            <div className="absolute bottom-4 left-4 right-4">
-                                <span className="inline-block px-2.5 py-1 rounded-full text-xs font-bold bg-green-500 text-white mb-2">
-                                    {story.tag}
-                                </span>
-                                <h2 className="text-white font-black text-lg leading-snug">{story.title}</h2>
-                            </div>
-                        </div>
-
-                        {/* Body */}
-                        <div className="overflow-y-auto flex-1 px-6 py-5">
-                            {/* Meta */}
-                            <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500 mb-5 pb-4 border-b border-gray-100">
-                                <span className="flex items-center gap-1"><Heart size={12} className="text-primary" /> {story.person_name}</span>
-                                {story.person_age && <span>{story.person_age} বছর</span>}
-                                <span className="flex items-center gap-1"><MapPin size={12} /> {story.division}</span>
-                                {story.found_date && (
-                                    <span className="flex items-center gap-1">
-                                        <Calendar size={12} /> {formatDate(story.found_date)}
-                                    </span>
-                                )}
-                            </div>
-
-                            {/* Story text */}
-                            <div className="prose prose-sm max-w-none text-gray-700 leading-relaxed text-sm whitespace-pre-wrap">
-                                {story.story}
-                            </div>
-
-                            {/* Duration */}
-                            {story.missing_date && story.found_date && (
-                                <div className="mt-5 bg-green-50 rounded-xl px-4 py-3 text-sm text-green-700 font-medium">
-                                    🎉 {formatDate(story.missing_date)} থেকে {formatDate(story.found_date)} — সফলভাবে পুনর্মিলিত
-                                </div>
-                            )}
-                        </div>
-                    </>
-                )}
-            </div>
-        </div>
-    );
-}
-
 // ── Main Page ────────────────────────────────────────────────────────
 export default function SuccessStoriesPage() {
     const [stories, setStories]     = useState([]);
@@ -191,7 +107,6 @@ export default function SuccessStoriesPage() {
     const [page, setPage]           = useState(1);
     const [search, setSearch]       = useState('');
     const [division, setDivision]   = useState('');
-    const [activeStoryId, setActiveStoryId] = useState(null);
 
     const fetchStories = useCallback(async (p = 1, q = search, div = division) => {
         setLoading(true);
@@ -301,9 +216,7 @@ export default function SuccessStoriesPage() {
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                     {featured.map(s => (
-                                        <div key={s.id} onClick={() => setActiveStoryId(s.id)} className="cursor-pointer">
-                                            <StoryCard story={s} featured />
-                                        </div>
+                                        <StoryCard key={s.id} story={s} featured />
                                     ))}
                                 </div>
                             </div>
@@ -317,9 +230,7 @@ export default function SuccessStoriesPage() {
                                 )}
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                                     {regular.map(s => (
-                                        <div key={s.id} onClick={() => setActiveStoryId(s.id)} className="cursor-pointer">
-                                            <StoryCard story={s} />
-                                        </div>
+                                        <StoryCard key={s.id} story={s} />
                                     ))}
                                 </div>
                             </div>
@@ -345,12 +256,6 @@ export default function SuccessStoriesPage() {
                 )}
             </div>
 
-            {/* Story detail modal */}
-            {activeStoryId && (
-                <StoryDetailModal
-                    storyId={activeStoryId}
-                    onClose={() => setActiveStoryId(null)} />
-            )}
         </div>
     );
 }

@@ -175,6 +175,18 @@ class SuccessStoryController extends Controller
         ]);
     }
 
+    public function toggleFeatured(Request $request, int $id)
+    {
+        $story = SuccessStory::findOrFail($id);
+        $story->featured = !$story->featured;
+        $story->save();
+
+        return response()->json([
+            'message'  => $story->featured ? 'Story featured.' : 'Story unfeatured.',
+            'featured' => $story->featured,
+        ]);
+    }
+
     public function publicIndex(Request $request)
     {
         $query = SuccessStory::published()

@@ -475,24 +475,22 @@ export default function AdminSuccessStoriesPage() {
     const handleTogglePublish = async (story) => {
         try {
             const res = await apiClient.patch(`/admin/success-stories/${story.id}/toggle-publish`);
-            toast.success(res.message);
+            toast.success(res.message || (story.is_published ? 'গল্পটি লুকানো হয়েছে' : 'গল্পটি প্রকাশিত হয়েছে'));
             fetchStories(page);
         } catch { /* toasted */ }
     };
 
     const handleToggleFeatured = async (story) => {
         try {
-            await apiClient.post(`/admin/success-stories/${story.id}`, { featured: story.featured ? '0' : '1' }, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
-            toast.success(story.featured ? 'ফিচার সরানো হয়েছে' : 'ফিচার করা হয়েছে');
+            const res = await apiClient.patch(`/admin/success-stories/${story.id}/toggle-featured`);
+            toast.success(res.message || (story.featured ? 'ফিচার সরানো হয়েছে' : 'ফিচার করা হয়েছে'));
             fetchStories(page);
         } catch { /* toasted */ }
     };
 
     const handleDelete = async () => {
         try {
-            await apiClient.client.delete(`/admin/success-stories/${deleteStory.id}`);
+            await apiClient.delete(`/admin/success-stories/${deleteStory.id}`);
             toast.success('গল্পটি মুছে ফেলা হয়েছে');
             setDeleteStory(null);
             fetchStories(page);
