@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\MissingReport;
+use App\Models\FoundReport;
 use App\Services\CloudinaryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -255,7 +256,7 @@ class MissingPersonController extends Controller
     public function getPublicStats()
     {
         try {
-            $totalSubmitted = MissingReport::count();
+            $totalSubmitted = MissingReport::count() + FoundReport::count();
 
             return response()->json([
                 'success' => true,

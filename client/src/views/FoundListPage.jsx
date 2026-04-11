@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { MapPin, Shirt, ArrowRight, SlidersHorizontal, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeftOpen, Shield, Calendar } from 'lucide-react';
+import apiClient from '../api';
 
 const avatar = (seed, gender, age) => {
     if (!seed) return `https://api.dicebear.com/7.x/shapes/png?seed=unknown&size=200&backgroundColor=d4ede9`;
@@ -8,21 +9,6 @@ const avatar = (seed, gender, age) => {
     const bg = gender === 'female' ? 'e8f5f2' : 'd4ede9';
     return `https://api.dicebear.com/7.x/${style}/png?seed=${encodeURIComponent(seed)}&size=300&backgroundColor=${bg}`;
 };
-
-const ALL_FOUND = [
-    { id: 1, name: 'অচেনা বৃদ্ধ', age: 70, gender: 'male', division: 'ঢাকা', district: 'মিরপুর, ঢাকা', clothing: 'সাদা পাঞ্জাবি', foundAt: 'মিরপুর ১০ নং বাসস্ট্যান্ড', foundDate: '২ মার্চ, ২০২৫', seed: 'elder1', condition: 'স্বাভাবিক' },
-    { id: 2, name: 'অচেনা নারী', age: 35, gender: 'female', division: 'চট্টগ্রাম', district: 'হালিশহর, চট্টগ্রাম', clothing: 'লাল শাড়ি', foundAt: 'চট্টগ্রাম রেলস্টেশন', foundDate: '২৮ ফেব্রুয়ারি, ২০২৫', seed: 'woman35', condition: 'চিকিৎসাধীন' },
-    { id: 3, name: 'অচেনা কিশোর', age: 14, gender: 'male', division: 'ঢাকা', district: 'সাভার, ঢাকা', clothing: 'নীল জিন্স ও সবুজ শার্ট', foundAt: 'সাভার ইপিজেড গেট', foundDate: '১ মার্চ, ২০২৫', seed: 'boy14', condition: 'স্বাভাবিক' },
-    { id: 4, name: 'অচেনা শিশু', age: 4, gender: 'female', division: 'রাজশাহী', district: 'রাজশাহী সদর', clothing: 'হলুদ ফ্রক', foundAt: 'রাজশাহী কেন্দ্রীয় উদ্যান', foundDate: '২৫ ফেব্রুয়ারি, ২০২৫', seed: '', condition: 'স্বাভাবিক' },
-    { id: 5, name: 'অচেনা পুরুষ', age: 45, gender: 'male', division: 'সিলেট', district: 'জালালাবাদ, সিলেট', clothing: 'ধূসর শার্ট', foundAt: 'সিলেট শহীদ মিনার চত্বর', foundDate: '২০ ফেব্রুয়ারি, ২০২৫', seed: 'man45', condition: 'চিকিৎসাধীন' },
-    { id: 6, name: 'অচেনা কিশোরী', age: 16, gender: 'female', division: 'খুলনা', district: 'খুলনা সদর', clothing: 'কমলা সালোয়ার কামিজ', foundAt: 'খুলনা বড় বাজার', foundDate: '15 ফেব্রুয়ারি, ২০২৫', seed: 'girl16', condition: 'স্বাভাবিক' },
-    { id: 7, name: 'অচেনা বৃদ্ধা', age: 65, gender: 'female', division: 'বরিশাল', district: 'বরিশাল সদর', clothing: 'কালো বোরকা', foundAt: 'বরিশাল লঞ্চঘাট', foundDate: '১০ ফেব্রুয়ারি, ২০২৫', seed: 'old65', condition: 'চিকিৎসাধীন' },
-    { id: 8, name: 'অচেনা পুরুষ', age: 30, gender: 'male', division: 'রংপুর', district: 'রংপুর সদর', clothing: 'কালো টি-শার্ট', foundAt: 'রংপুর পার্ক', foundDate: '৫ ফেব্রুয়ারি, ২০২৫', seed: 'man30', condition: 'স্বাভাবিক' },
-    { id: 9, name: 'অচেনা শিশু', age: 6, gender: 'male', division: 'ময়মনসিংহ', district: 'ময়মনসিংহ সদর', clothing: 'লাল টি-শার্ট', foundAt: 'ময়মনসিংহ কৃষি বিশ্ববিদ্যালয় এলাকা', foundDate: '১ ফেব্রুয়ারি, ২০২৫', seed: 'child6', condition: 'স্বাভাবিক' },
-    { id: 10, name: 'অচেনা নারী', age: 25, gender: 'female', division: 'ঢাকা', district: 'উত্তরা, ঢাকা', clothing: 'নীল ওড়না সহ সালোয়ার', foundAt: 'উত্তরা সেক্টর ৭', foundDate: '২৮ জানুয়ারি, ২০২৫', seed: 'woman25', condition: 'স্বাভাবিক' },
-    { id: 11, name: 'অচেনা পুরুষ', age: 55, gender: 'male', division: 'চট্টগ্রাম', district: 'পতেঙ্গা, চট্টগ্রাম', clothing: 'সাদা লুঙ্গি ও গেঞ্জি', foundAt: 'পতেঙ্গা সমুদ্র সৈকত', foundDate: '২২ জানুয়ারি, ২০২৫', seed: 'man55', condition: 'চিকিৎসাধীন' },
-    { id: 12, name: 'অচেনা কিশোরী', age: 13, gender: 'female', division: 'সিলেট', district: 'সুনামগঞ্জ', clothing: 'সবুজ কামিজ', foundAt: 'সুনামগঞ্জ বাসস্ট্যান্ড', foundDate: '১৫ জানুয়ারি, ২০২৫', seed: 'teen13', condition: 'স্বাভাবিক' },
-];
 
 const DIVISIONS = ['সব', 'ঢাকা', 'চট্টগ্রাম', 'রাজশাহী', 'খুলনা', 'বরিশাল', 'সিলেট', 'রংপুর', 'ময়মনসিংহ'];
 const CONDITIONS = ['সব', 'স্বাভাবিক', 'চিকিৎসাধীন'];
@@ -36,6 +22,8 @@ const conditionColor = c => c === 'স্বাভাবিক'
     : 'bg-accent-red/10 text-accent-red';
 
 export default function FoundListPage() {
+    const [allFound, setAllFound] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [activeDiv, setActiveDiv] = useState('সব');
     const [genderFilter, setGenderFilter] = useState('সবাই');
@@ -44,6 +32,53 @@ export default function FoundListPage() {
     const [selectedColors, setSelectedColors] = useState([]);
     const [sortBy, setSortBy] = useState('সর্বশেষ আগে');
     const [page, setPage] = useState(1);
+
+    useEffect(() => {
+        let mounted = true;
+
+        const loadPublishedFoundReports = async () => {
+            try {
+                const response = await apiClient.get('/found-reports/published');
+                const reports = Array.isArray(response?.reports) ? response.reports : [];
+
+                const mapped = reports.map((r) => {
+                    const condition = r.health_status === 'sick' ? 'চিকিৎসাধীন' : 'স্বাভাবিক';
+                    return {
+                        id: r.id,
+                        name: r.name || 'অজ্ঞাত',
+                        age: r.approximate_age ?? 0,
+                        gender: r.gender,
+                        condition,
+                        division: r.district,
+                        district: r.district,
+                        foundAt: r.address || 'ঠিকানা উল্লেখ নেই',
+                        clothing: r.physical_description || 'বিবরণ নেই',
+                        foundDate: r.found_date || 'তারিখ নেই',
+                        photoUrl: r.photo_url || null,
+                        seed: r.name || String(r.id),
+                    };
+                });
+
+                if (mounted) {
+                    setAllFound(mapped);
+                }
+            } catch (error) {
+                if (mounted) {
+                    setAllFound([]);
+                }
+            } finally {
+                if (mounted) {
+                    setLoading(false);
+                }
+            }
+        };
+
+        loadPublishedFoundReports();
+
+        return () => {
+            mounted = false;
+        };
+    }, []);
 
     const toggleColor = c =>
         setSelectedColors(prev => prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c]);
@@ -57,7 +92,7 @@ export default function FoundListPage() {
         setPage(1);
     };
 
-    const filtered = ALL_FOUND.filter(r => {
+    const filtered = allFound.filter(r => {
         if (activeDiv !== 'সব' && r.division !== activeDiv) return false;
         if (genderFilter === 'পুরুষ' && r.gender !== 'male') return false;
         if (genderFilter === 'নারী' && r.gender !== 'female') return false;
@@ -74,7 +109,7 @@ export default function FoundListPage() {
             {/* Sketch Avatar */}
             <div className="relative h-52 overflow-hidden bg-[#e8f5f2] flex items-center justify-center">
                 <img
-                    src={avatar(r.seed, r.gender, r.age)}
+                    src={r.photoUrl || avatar(r.seed, r.gender, r.age)}
                     alt={r.name}
                     className="h-full w-full object-cover object-top group-hover:scale-105 transition-transform duration-300"
                     onError={e => { e.target.src = `https://api.dicebear.com/7.x/shapes/png?seed=${r.id}&size=300&backgroundColor=d4ede9`; }}
@@ -112,7 +147,7 @@ export default function FoundListPage() {
                         <span className="text-gray-300">{r.foundDate}</span>
                     </div>
                 </div>
-                <Link to={`/emergency/${r.id}`}
+                <Link to={`/found-report/${r.id}`}
                     className="flex items-center justify-center gap-1.5 w-full border border-accent-teal text-accent-teal text-xs py-2 rounded-xl hover:bg-accent-teal hover:text-white transition-colors font-medium">
                     বিস্তারিত দেখুন <ArrowRight size={12} />
                 </Link>
@@ -136,7 +171,7 @@ export default function FoundListPage() {
                         আপনার পরিচিত কেউ থাকলে যোগাযোগ করুন।
                     </p>
                     <div className="flex flex-wrap gap-4 mt-5 text-sm">
-                        {[['১২', 'মোট উদ্ধার'], ['৮', 'পরিচয় অনিশ্চিত'], ['৪', 'চিকিৎসাধীন']].map(([v, l]) => (
+                            {[[String(allFound.length), 'মোট উদ্ধার'], [String(allFound.filter(r => r.name === 'অজ্ঞাত').length), 'পরিচয় অনিশ্চিত'], [String(allFound.filter(r => r.condition === 'চিকিৎসাধীন').length), 'চিকিৎসাধীন']].map(([v, l]) => (
                             <div key={l} className="bg-white/10 rounded-xl px-4 py-2 text-center">
                                 <p className="font-black text-lg">{v}</p>
                                 <p className="text-white/60 text-xs">{l}</p>
@@ -269,7 +304,11 @@ export default function FoundListPage() {
                     </div>
 
                     {/* Cards */}
-                    {filtered.length === 0 ? (
+                    {loading ? (
+                        <div className="text-center py-20">
+                            <p className="text-gray-500 font-medium">লোড হচ্ছে...</p>
+                        </div>
+                    ) : filtered.length === 0 ? (
                         <div className="text-center py-20">
                             <div className="text-4xl mb-3">🔍</div>
                             <p className="text-gray-500 font-medium">কোনো রেকর্ড পাওয়া যায়নি</p>

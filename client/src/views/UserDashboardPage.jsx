@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
     FileText, Bell, Users, Clock,
-    Search, MapPin, ChevronRight, Zap, Eye, X,
+    Search, MapPin, ChevronRight, ChevronLeft, Zap, Eye, X,
     UserCircle2, AlertTriangle, Settings
 } from 'lucide-react';
 import { useAuth } from '../helpers/AuthContext';
 import apiClient from '../api';
 import { getMyMissingReports } from '../helpers/missingReportService';
+import { getMyFoundReports, getMyFoundAiMatchReports, getMyFoundAiMatchDetails } from '../helpers/foundReportService';
 
 const formatDateBN = (dateStr) => {
     if (!dateStr) return '—';
@@ -32,6 +33,26 @@ const formatReportStatusBN = (status) => {
         rejected: 'প্রত্যাখ্যাত',
     };
     return labels[status] || status;
+};
+
+const getReportTypeLabelBN = (reportType) => reportType === 'found' ? 'উদ্ধার রিপোর্ট' : 'নিখোঁজ রিপোর্ট';
+
+const getReportAge = (report) => {
+    if (report?.age != null) return report.age;
+    if (report?.approximate_age != null) return report.approximate_age;
+    return null;
+};
+
+const getReportEventDate = (report) => report?.last_seen_date || report?.found_date || null;
+const getReportEventTime = (report) => report?.last_seen_time || report?.found_time || null;
+const getReportAppearance = (report) => report?.clothing_description || report?.physical_description || null;
+const sanitizeAiReasoning = (reasoning) => {
+    if (!reasoning) return '';
+    return String(reasoning)
+        .split('\n')
+        .filter(line => !/rule\s*[- ]?based|score\s*breakdown|name_score|district_score|location_score|age_score|gender_score|description_score/i.test(line))
+        .join('\n')
+        .trim();
 };
 
 // Status Badge 
@@ -63,30 +84,81 @@ const Skeleton = ({ className = '' }) => (
 // Main Component
 export default function UserDashboardPage() {
     const { user } = useAuth();                          // real user from AuthContext
+    const navigate = useNavigate();
     const [reports, setReports] = useState([]);
     const [notifications, setNotifications] = useState([]);
     const [stats, setStats] = useState(null);
     const [selectedReport, setSelectedReport] = useState(null);
+    const [aiMatchReports, setAiMatchReports] = useState([]);
+    const [aiModalOpen, setAiModalOpen] = useState(false);
+    const [aiDetailsLoading, setAiDetailsLoading] = useState(false);
+    const [selectedAiMatchDetails, setSelectedAiMatchDetails] = useState(null);
     const [loading, setLoading] = useState(true);
+
+    const closeAiModal = () => {
+        setAiModalOpen(false);
+        setSelectedAiMatchDetails(null);
+        setAiDetailsLoading(false);
+    };
+
+    const openAiMatchList = () => {
+        setAiModalOpen(true);
+        setSelectedAiMatchDetails(null);
+    };
+
+    const openAiMatchDetails = async (reportId) => {
+        setAiDetailsLoading(true);
+        const result = await getMyFoundAiMatchDetails(reportId);
+        if (result.success) {
+            setSelectedAiMatchDetails({
+                foundReport: result.foundReport,
+                matches: result.matches,
+                total: result.total,
+            });
+        } else {
+            setSelectedAiMatchDetails({
+                foundReport: null,
+                matches: [],
+                total: 0,
+                message: result.message || 'AI match তথ্য পাওয়া যায়নি',
+            });
+        }
+        setAiDetailsLoading(false);
+    };
 
     useEffect(() => {
         const fetchDashboardData = async () => {
             try {
-                const [statsData, myReportsData] = await Promise.all([
+                const [statsData, myMissingReportsData, myFoundReportsData, aiMatchReportsData] = await Promise.all([
                     apiClient.getUserStats(),
                     getMyMissingReports(),
+                    getMyFoundReports(),
+                    getMyFoundAiMatchReports(),
                 ]);
 
                 setStats(statsData);
-                if (myReportsData.success) {
-                    setReports(myReportsData.reports);
-                } else {
-                    setReports([]);
-                }
+
+                const missingReports = myMissingReportsData.success
+                    ? (myMissingReportsData.reports || []).map(r => ({ ...r, report_type: 'missing' }))
+                    : [];
+
+                const foundReports = myFoundReportsData.success
+                    ? (myFoundReportsData.reports || []).map(r => ({ ...r, report_type: 'found' }))
+                    : [];
+
+                const mergedReports = [...missingReports, ...foundReports].sort((a, b) => {
+                    const aTime = new Date((a?.created_at || '').replace(' ', 'T')).getTime() || 0;
+                    const bTime = new Date((b?.created_at || '').replace(' ', 'T')).getTime() || 0;
+                    return bTime - aTime;
+                });
+
+                setReports(mergedReports);
+                setAiMatchReports(aiMatchReportsData.success ? (aiMatchReportsData.reports || []) : []);
             } catch (error) {
                 console.error('Failed to fetch dashboard data:', error);
                 setStats(null);
                 setReports([]);
+                setAiMatchReports([]);
             } finally {
                 setLoading(false);
             }
@@ -136,24 +208,51 @@ export default function UserDashboardPage() {
 
                 {/* ── Stats ── */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                    {[
-                        { icon: FileText, label: 'আমার রিপোর্ট', key: 'totalReports', light: 'bg-secondary/10 text-secondary' },
-                        { icon: Bell, label: 'সক্রিয় আলার্ট', key: 'activeAlerts', light: 'bg-primary/10 text-primary' },
-                        { icon: Users, label: 'সফল পুনর্মিলন', key: 'successCount', light: 'bg-teal-100 text-teal-600' },
-                        { icon: Zap, label: 'AI ম্যাচ পরীক্ষা', key: 'aiChecks', light: 'bg-purple-100 text-purple-600' },
-                    ].map(s => (
-                        <div key={s.key} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-3">
-                            <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${s.light}`}>
-                                <s.icon size={20} />
-                            </div>
-                            <div>
-                                <p className="text-xl font-black text-gray-800">
-                                    {stats?.[s.key] != null ? formatBnNumber(stats[s.key]) : '—'}
-                                </p>
-                                <p className="text-[11px] text-gray-400 leading-tight">{s.label}</p>
-                            </div>
+                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-3">
+                        <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 bg-secondary/10 text-secondary">
+                            <FileText size={20} />
                         </div>
-                    ))}
+                        <div>
+                            <p className="text-xl font-black text-gray-800">{stats?.totalReports != null ? formatBnNumber(stats.totalReports) : '—'}</p>
+                            <p className="text-[11px] text-gray-400 leading-tight">আমার রিপোর্ট</p>
+                        </div>
+                    </div>
+
+                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-3">
+                        <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 bg-primary/10 text-primary">
+                            <Bell size={20} />
+                        </div>
+                        <div>
+                            <p className="text-xl font-black text-gray-800">{stats?.activeAlerts != null ? formatBnNumber(stats.activeAlerts) : '—'}</p>
+                            <p className="text-[11px] text-gray-400 leading-tight">সক্রিয় আলার্ট</p>
+                        </div>
+                    </div>
+
+                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-3">
+                        <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 bg-teal-100 text-teal-600">
+                            <Users size={20} />
+                        </div>
+                        <div>
+                            <p className="text-xl font-black text-gray-800">{stats?.successCount != null ? formatBnNumber(stats.successCount) : '—'}</p>
+                            <p className="text-[11px] text-gray-400 leading-tight">সফল পুনর্মিলন</p>
+                        </div>
+                    </div>
+
+                    <button
+                        type="button"
+                        onClick={openAiMatchList}
+                        className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-3 text-left transition-colors hover:bg-purple-50/50 hover:border-purple-200"
+                    >
+                        <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 bg-purple-100 text-purple-600">
+                            <Zap size={20} />
+                        </div>
+                        <div>
+                            <p className="text-xl font-black text-gray-800">
+                                {formatBnNumber(aiMatchReports.length)}
+                            </p>
+                            <p className="text-[11px] text-gray-400 leading-tight">AI ম্যাচ পরীক্ষা</p>
+                        </div>
+                    </button>
                 </div>
 
                 {/* ── Main Grid ── */}
@@ -183,7 +282,7 @@ export default function UserDashboardPage() {
                                 <div className="divide-y divide-gray-50">
                                     {reports.map(r => (
                                         <button
-                                            key={r.id}
+                                            key={`${r.report_type || 'missing'}-${r.id}`}
                                             type="button"
                                             onClick={() => setSelectedReport(r)}
                                             className="w-full text-left flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50/50 transition-colors group"
@@ -194,7 +293,7 @@ export default function UserDashboardPage() {
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex items-baseline gap-2">
                                                     <p className="text-sm font-bold text-gray-800 truncate">{r.name}</p>
-                                                    <span className="text-xs text-gray-400 flex-shrink-0">~{formatBnNumber(r.age)} বছর</span>
+                                                    <span className="text-xs text-gray-400 flex-shrink-0">{getReportAge(r) != null ? `~${formatBnNumber(getReportAge(r))} বছর` : 'বয়স অজানা'}</span>
                                                 </div>
                                                 <div className="flex items-center gap-1.5 mt-0.5">
                                                     <MapPin size={10} className="text-gray-300 flex-shrink-0" />
@@ -202,6 +301,8 @@ export default function UserDashboardPage() {
                                                     <span className="text-gray-200 text-xs">•</span>
                                                     <Clock size={10} className="text-gray-300 flex-shrink-0" />
                                                     <span className="text-xs text-gray-400 flex-shrink-0">{formatDateBN(r.created_at)}</span>
+                                                    <span className="text-gray-200 text-xs">•</span>
+                                                    <span className="text-[10px] text-gray-400 flex-shrink-0">{getReportTypeLabelBN(r.report_type)}</span>
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-2 flex-shrink-0">
@@ -322,6 +423,132 @@ export default function UserDashboardPage() {
                 </div>
             </div>
 
+            {aiModalOpen && (
+                <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+                    <div className="w-full max-w-3xl bg-white rounded-2xl shadow-xl border border-gray-100 max-h-[90vh] overflow-y-auto">
+                        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 sticky top-0 bg-white">
+                            <div className="flex items-center gap-2">
+                                {selectedAiMatchDetails && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setSelectedAiMatchDetails(null)}
+                                        className="w-8 h-8 rounded-lg hover:bg-gray-100 text-gray-500 flex items-center justify-center"
+                                    >
+                                        <ChevronLeft size={16} />
+                                    </button>
+                                )}
+                                <h3 className="text-lg font-black text-gray-800">
+                                    {selectedAiMatchDetails ? 'AI ম্যাচ বিস্তারিত' : 'আমার AI ম্যাচ রিপোর্ট'}
+                                </h3>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={closeAiModal}
+                                className="w-8 h-8 rounded-lg hover:bg-gray-100 text-gray-500 flex items-center justify-center"
+                            >
+                                <X size={16} />
+                            </button>
+                        </div>
+
+                        {!selectedAiMatchDetails && (
+                            <div className="p-5">
+                                {aiMatchReports.length === 0 ? (
+                                    <div className="text-center py-12">
+                                        <Zap size={30} className="text-purple-200 mx-auto mb-3" />
+                                        <p className="text-sm font-medium text-gray-500">এখনো কোনো AI ম্যাচ পাওয়া যায়নি</p>
+                                        <p className="text-xs text-gray-400 mt-1">অ্যাডমিন অনুমোদনের পর প্রকাশিত রিপোর্টে AI ম্যাচ দেখা যাবে</p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {aiMatchReports.map((r) => (
+                                            <button
+                                                key={`ai-${r.id}`}
+                                                type="button"
+                                                onClick={() => openAiMatchDetails(r.id)}
+                                                className="w-full text-left border border-gray-100 rounded-xl p-4 hover:border-purple-200 hover:bg-purple-50/20 transition-colors"
+                                            >
+                                                <div className="flex items-start justify-between gap-3">
+                                                    <div className="min-w-0">
+                                                        <p className="text-sm font-bold text-gray-800 truncate">{r.name || 'অজ্ঞাত ব্যক্তি'}</p>
+                                                        <p className="text-xs text-gray-400 mt-1">{r.district || '—'} • {formatDateBN(r.created_at)}</p>
+                                                    </div>
+                                                    <div className="text-right flex-shrink-0">
+                                                        <p className="text-sm font-bold text-purple-600">{formatBnNumber(r.ai_match_count || 0)} টি</p>
+                                                        <p className="text-[10px] text-gray-400">ম্যাচ পাওয়া গেছে</p>
+                                                    </div>
+                                                </div>
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {selectedAiMatchDetails && (
+                            <div className="p-5 space-y-5">
+                                {aiDetailsLoading && (
+                                    <div className="space-y-3">
+                                        <Skeleton className="h-20 rounded-xl" />
+                                        <Skeleton className="h-24 rounded-xl" />
+                                    </div>
+                                )}
+
+                                {!aiDetailsLoading && selectedAiMatchDetails.foundReport && (
+                                    <>
+                                        <div className="bg-purple-50 border border-purple-100 rounded-xl p-4">
+                                            <p className="text-xs text-purple-500 mb-1">উদ্ধার রিপোর্ট</p>
+                                            <p className="text-sm font-bold text-gray-800">{selectedAiMatchDetails.foundReport.name || 'অজ্ঞাত ব্যক্তি'}</p>
+                                            <p className="text-xs text-gray-500 mt-1">
+                                                {selectedAiMatchDetails.foundReport.district || '—'} • {formatDateBN(selectedAiMatchDetails.foundReport.created_at)}
+                                            </p>
+                                        </div>
+
+                                        {selectedAiMatchDetails.matches.length === 0 ? (
+                                            <div className="text-center py-8 text-sm text-gray-500">এই রিপোর্টে এখনো AI ম্যাচ পাওয়া যায়নি</div>
+                                        ) : (
+                                            <div className="space-y-3">
+                                                {selectedAiMatchDetails.matches.map((m, idx) => (
+                                                    <button
+                                                        key={`m-${m.missing_report_id || idx}`}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            if (!m.missing_report_id) return;
+                                                            closeAiModal();
+                                                            navigate(`/emergency/${m.missing_report_id}`);
+                                                        }}
+                                                        className="w-full text-left border border-gray-100 rounded-xl p-4 transition-colors hover:bg-purple-50/30 hover:border-purple-200"
+                                                    >
+                                                        <div className="flex items-start justify-between gap-3">
+                                                            <div>
+                                                                <p className="text-sm font-bold text-gray-800">{m.missing_name || 'অজ্ঞাত ব্যক্তি'}</p>
+                                                                <p className="text-xs text-gray-500 mt-1">{m.missing_district || '—'} • {m.missing_last_seen ? formatDateBN(m.missing_last_seen) : '—'}</p>
+                                                            </div>
+                                                            <div className="text-right">
+                                                                <p className="text-sm font-bold text-teal-600">{Math.round(Number(m.total_score || 0))}%</p>
+                                                                <p className="text-[10px] text-gray-400">ম্যাচ স্কোর</p>
+                                                            </div>
+                                                        </div>
+                                                        {sanitizeAiReasoning(m.ai_reasoning) && (
+                                                            <p className="text-xs text-gray-600 mt-3 leading-relaxed">{sanitizeAiReasoning(m.ai_reasoning)}</p>
+                                                        )}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </>
+                                )}
+
+                                {!aiDetailsLoading && !selectedAiMatchDetails.foundReport && (
+                                    <div className="text-center py-8 text-sm text-gray-500">
+                                        {selectedAiMatchDetails.message || 'AI match তথ্য পাওয়া যায়নি'}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+
             {selectedReport && (
                 <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
                     <div className="w-full max-w-3xl bg-white rounded-2xl shadow-xl border border-gray-100 max-h-[90vh] overflow-y-auto">
@@ -350,6 +577,10 @@ export default function UserDashboardPage() {
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
+                                    <p className="text-xs text-gray-400 mb-1">রিপোর্টের ধরন</p>
+                                    <p className="text-sm font-semibold text-gray-700">{getReportTypeLabelBN(selectedReport.report_type)}</p>
+                                </div>
+                                <div>
                                     <p className="text-xs text-gray-400 mb-1">নাম</p>
                                     <p className="text-sm font-bold text-gray-800">{selectedReport.name || '—'}</p>
                                 </div>
@@ -359,7 +590,7 @@ export default function UserDashboardPage() {
                                 </div>
                                 <div>
                                     <p className="text-xs text-gray-400 mb-1">বয়স</p>
-                                    <p className="text-sm font-semibold text-gray-700">{formatBnNumber(selectedReport.age)} বছর</p>
+                                    <p className="text-sm font-semibold text-gray-700">{getReportAge(selectedReport) != null ? `${formatBnNumber(getReportAge(selectedReport))} বছর` : '—'}</p>
                                 </div>
                                 <div>
                                     <p className="text-xs text-gray-400 mb-1">লিঙ্গ</p>
@@ -374,12 +605,12 @@ export default function UserDashboardPage() {
                                     <p className="text-sm font-semibold text-gray-700">{formatDateBN(selectedReport.created_at)}</p>
                                 </div>
                                 <div>
-                                    <p className="text-xs text-gray-400 mb-1">সর্বশেষ দেখা</p>
-                                    <p className="text-sm font-semibold text-gray-700">{selectedReport.last_seen_date ? formatDateBN(selectedReport.last_seen_date) : '—'}</p>
+                                    <p className="text-xs text-gray-400 mb-1">{selectedReport.report_type === 'found' ? 'উদ্ধারের তারিখ' : 'সর্বশেষ দেখা'}</p>
+                                    <p className="text-sm font-semibold text-gray-700">{getReportEventDate(selectedReport) ? formatDateBN(getReportEventDate(selectedReport)) : '—'}</p>
                                 </div>
                                 <div>
-                                    <p className="text-xs text-gray-400 mb-1">সর্বশেষ দেখা সময়</p>
-                                    <p className="text-sm font-semibold text-gray-700">{selectedReport.last_seen_time || '—'}</p>
+                                    <p className="text-xs text-gray-400 mb-1">{selectedReport.report_type === 'found' ? 'উদ্ধারের সময়' : 'সর্বশেষ দেখা সময়'}</p>
+                                    <p className="text-sm font-semibold text-gray-700">{getReportEventTime(selectedReport) || '—'}</p>
                                 </div>
                             </div>
 
@@ -394,8 +625,8 @@ export default function UserDashboardPage() {
                             </div>
 
                             <div>
-                                <p className="text-xs text-gray-400 mb-1">পোশাকের বিবরণ</p>
-                                <p className="text-sm text-gray-700">{selectedReport.clothing_description || '—'}</p>
+                                <p className="text-xs text-gray-400 mb-1">{selectedReport.report_type === 'found' ? 'শারীরিক বিবরণ' : 'পোশাকের বিবরণ'}</p>
+                                <p className="text-sm text-gray-700">{getReportAppearance(selectedReport) || '—'}</p>
                             </div>
 
                             <div>

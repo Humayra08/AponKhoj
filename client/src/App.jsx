@@ -29,6 +29,7 @@ import LegalAidPage from './views/LegalAidPage';
 import PrivacyPage from './views/PrivacyPage';
 import ContactPage from './views/ContactPage';
 import EmergencyDetailsPage from './views/EmergencyDetailsPage';
+import FoundReportDetailsPage from './views/FoundReportDetailsPage';
 import GoogleAuthCallbackPage from './views/GoogleAuthCallbackPage';
 
 function AppShell() {
@@ -62,6 +63,7 @@ function AppShell() {
           <Route path="/report-found" element={<ReportFoundPage />} />
           <Route path="/search" element={<SearchPage />} />
           <Route path="/emergency/:id" element={<EmergencyDetailsPage />} />
+          <Route path="/found-report/:id" element={<FoundReportDetailsPage />} />
           <Route path="/legal-aid" element={<LegalAidPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/contact" element={<ContactPage />} />

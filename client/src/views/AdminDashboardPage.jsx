@@ -10,6 +10,29 @@ import { useAuth } from '../helpers/AuthContext';
 import AdminNavbar from '../Components/AdminNavbar';
 import apiClient from '../api';
 import { getPendingMissingReports } from '../helpers/missingReportService';
+import { getPendingFoundReports, approveFoundReport, rejectFoundReport } from '../helpers/foundReportService';
+import FoundReportMatchModal from '../Components/FoundReportMatchModal';
+import toast from 'react-hot-toast';
+
+const toBnNumber = (value) => Number(value || 0).toLocaleString('bn-BD');
+const toBnDigits = (value) => String(value ?? '').replace(/\d/g, (d) => '০১২৩৪৫৬৭৮৯'[Number(d)]);
+const toBnMonthLabel = (label) => {
+    const map = {
+        Jan: 'জান',
+        Feb: 'ফেব',
+        Mar: 'মার্চ',
+        Apr: 'এপ্রি',
+        May: 'মে',
+        Jun: 'জুন',
+        Jul: 'জুল',
+        Aug: 'আগ',
+        Sep: 'সেপ',
+        Oct: 'অক্টো',
+        Nov: 'নভে',
+        Dec: 'ডিসে',
+    };
+    return map[label] || label;
+};
 
 /* ─────────────────────────────────────────────────────────────
    DATA HOOK
@@ -34,26 +57,56 @@ function useAdminData() {
     const [reports, setReports] = useState([]);
     const [recentUsers, setRecentUsers] = useState([]);
     const [activity, setActivity] = useState([]);
+    const [pendingFoundReports, setPendingFoundReports] = useState([]);
 
     useEffect(() => {
         let mounted = true;
 
+        const statusLabelBn = {
+            pending: 'অপেক্ষমাণ',
+            resolved: 'সমাধান',
+            verified: 'যাচাইকৃত',
+            matched: 'ম্যাচ পাওয়া',
+            closed: 'বন্ধ',
+            active: 'সক্রিয়',
+            published: 'প্রকাশিত',
+            rejected: 'প্রত্যাখ্যাত',
+            found: 'সফল',
+            other: 'অন্যান্য',
+        };
+
+        const normalizeStatusData = (rawStatusData) => {
+            const safeRaw = Array.isArray(rawStatusData) ? rawStatusData : [];
+            if (!safeRaw.length) return [];
+
+            const total = safeRaw.reduce((sum, item) => sum + (Number(item.value) || 0), 0);
+
+            return safeRaw.map((item) => {
+                const key = String(item?.key || item?.status || item?.label || '').toLowerCase();
+                const value = Number(item?.value) || 0;
+                const pct = total > 0 ? Number(((value / total) * 100).toFixed(1)) : 0;
+
+                return {
+                    ...item,
+                    value,
+                    pct: Number.isFinite(Number(item?.pct)) ? Number(item.pct) : pct,
+                    label: statusLabelBn[key] || item?.label || '—',
+                    key,
+                };
+            });
+        };
+
         const loadAdminData = async () => {
             try {
-                console.log('🔄 Fetching admin stats and reports...');
-                
                 // Fetch stats and recent reports in parallel 
-                const [statsRes, reportsRes, pendingRes] = await Promise.all([
+                const [statsRes, reportsRes, pendingRes, pendingFoundRes] = await Promise.all([
                     apiClient.get('/admin/stats'),
                     apiClient.get('/admin/reports/recent'),
                     getPendingMissingReports(),
+                    getPendingFoundReports(),
                 ]);
 
                 if (!mounted) return;
-
-                console.log('✅ Stats Response:', statsRes);
-                console.log('✅ Recent Reports Response:', reportsRes);
-                console.log('✅ Pending Reports Response:', pendingRes);
 
                 // Extract stats from nested structure
                 const statsData = statsRes?.stats || {
@@ -67,28 +120,28 @@ function useAdminData() {
                 // Get total reports count - use length of all reports if available
                 const allReportsData = Array.isArray(reportsRes) ? reportsRes : (reportsRes?.reports ?? []);
                 const pendingReportsArray = pendingRes?.reports ?? [];
+                const pendingFoundReportsArray = pendingFoundRes?.reports ?? [];
+                const pendingTotal = pendingReportsArray.length + pendingFoundReportsArray.length;
+                const normalizedStatusData = normalizeStatusData(statsRes?.statusData || []);
 
                 // Override counts with real data from API calls
                 const finalStats = {
                     ...statsData,
                     totalReports: statsData.totalReports || allReportsData.length,
-                    activeMissing: pendingReportsArray.length, // Real-time pending count
+                    activeMissing: pendingTotal,
                 };
-
-                console.log('📊 Final Stats:', finalStats);
 
                 setStats(finalStats);
                 setMonthlyData(statsRes?.monthlyData || []);
-                setStatusData(statsRes?.statusData || []);
+                setStatusData(normalizedStatusData);
                 setDivisions(statsRes?.divisions || []);
                 setRecentUsers(statsRes?.recentUsers || []);
                 setActivity(statsRes?.activity || []);
                 setReports(allReportsData);
+                setPendingFoundReports(pendingFoundReportsArray);
 
                 if (mounted) setLoading(false);
-            } catch (error) {
-                console.error('❌ Error loading admin data:', error?.response?.data || error?.message || error);
-                
+            } catch {
                 if (!mounted) return;
                 
                 setStats({ 
@@ -104,6 +157,7 @@ function useAdminData() {
                 setReports([]);
                 setRecentUsers([]);
                 setActivity([]);
+                setPendingFoundReports([]);
                 setLoading(false);
             }
         };
@@ -124,6 +178,7 @@ function useAdminData() {
         reports, setReports,
         recentUsers, setRecentUsers,
         activity, setActivity,
+        pendingFoundReports, setPendingFoundReports,
     };
 }
 
@@ -135,6 +190,10 @@ const STATUS_STYLE = {
     verified: { cls: 'bg-blue-50 text-blue-700 border-blue-200', label: 'যাচাইকৃত' },
     matched: { cls: 'bg-purple-50 text-purple-700 border-purple-200', label: 'ম্যাচ পাওয়া' },
     closed: { cls: 'bg-emerald-50 text-emerald-700 border-emerald-200', label: 'সফল' },
+    found: { cls: 'bg-emerald-50 text-emerald-700 border-emerald-200', label: 'সফল' },
+    published: { cls: 'bg-teal-50 text-teal-700 border-teal-200', label: 'প্রকাশিত' },
+    approved: { cls: 'bg-blue-50 text-blue-700 border-blue-200', label: 'অনুমোদিত' },
+    rejected: { cls: 'bg-red-50 text-red-700 border-red-200', label: 'প্রত্যাখ্যাত' },
 };
 
 const ACTIVITY_ICON = { verify: CheckCircle, user: UserCheck, close: AlertTriangle, ai: Zap, system: RefreshCw };
@@ -186,7 +245,7 @@ function DonutChart({ data, total }) {
                         strokeDashoffset={s.offset}
                         transform={`rotate(-90 ${cx} ${cy})`} />
                 ))}
-                <text x={cx} y={cy - 6} textAnchor="middle" fontSize="18" fontWeight="800" fill="#1f2937">{total ?? data.reduce((a, d) => a + d.value, 0)}</text>
+                <text x={cx} y={cy - 6} textAnchor="middle" fontSize="18" fontWeight="800" fill="#1f2937">{toBnNumber(total ?? data.reduce((a, d) => a + d.value, 0))}</text>
                 <text x={cx} y={cy + 12} textAnchor="middle" fontSize="9" fill="#9ca3af">মোট</text>
             </svg>
             <div className="grid grid-cols-2 gap-x-6 gap-y-2 w-full">
@@ -194,7 +253,7 @@ function DonutChart({ data, total }) {
                     <div key={i} className="flex items-center gap-2 text-xs">
                         <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: d.color }} />
                         <span className="text-gray-500 truncate">{d.label}</span>
-                        <span className="ml-auto font-bold text-gray-700">{d.pct}%</span>
+                        <span className="ml-auto font-bold text-gray-700">{toBnDigits(d.pct)}%</span>
                     </div>
                 ))}
             </div>
@@ -320,10 +379,84 @@ export function AdminSidebar({ active, onNav, collapsed, onToggle }) {
    SECTIONS
 ───────────────────────────────────────────────────────────── */
 function OverviewSection({ data }) {
-    const { stats, monthlyData, statusData, divisions, reports, recentUsers, activity, loading } = data;
+    const {
+        stats,
+        setStats,
+        monthlyData,
+        statusData,
+        setStatusData,
+        divisions,
+        reports,
+        recentUsers,
+        activity,
+        pendingFoundReports,
+        setPendingFoundReports,
+        loading,
+    } = data;
     const { user } = useAuth();
     const today = new Date().toLocaleDateString('bn-BD', { year: 'numeric', month: 'long', day: 'numeric' });
     const barMax = monthlyData.length ? Math.max(...monthlyData.map(d => d.value)) : 1;
+    const [selectedFoundReport, setSelectedFoundReport] = useState(null);
+    const [showAllRecentReports, setShowAllRecentReports] = useState(false);
+    const visibleRecentReports = showAllRecentReports ? reports : reports.slice(0, 5);
+
+    const applyModerationCountUpdate = () => {
+        setStats(prev => ({
+            ...prev,
+            activeMissing: Math.max((prev.activeMissing || 0) - 1, 0),
+        }));
+
+        setStatusData(prev => {
+            if (!Array.isArray(prev) || prev.length === 0) return prev;
+
+            const updated = prev.map(item => {
+                const key = String(item?.key || item?.status || item?.label || '').toLowerCase();
+                const value = Number(item?.value) || 0;
+
+                if (key === 'pending' || key === 'অপেক্ষমাণ') {
+                    return { ...item, value: Math.max(value - 1, 0) };
+                }
+                if (key === 'resolved' || key === 'closed' || key === 'সমাধান' || key === 'বন্ধ') {
+                    return { ...item, value: value + 1 };
+                }
+                return item;
+            });
+
+            const total = updated.reduce((sum, item) => sum + (Number(item.value) || 0), 0);
+            return updated.map(item => ({
+                ...item,
+                pct: total > 0 ? Number((((Number(item.value) || 0) / total) * 100).toFixed(1)) : 0,
+            }));
+        });
+    };
+
+    const handleApproveFound = async (id) => {
+        try {
+            const result = await approveFoundReport(id);
+            if (result.success) {
+                toast.success('Found report approved!');
+                setPendingFoundReports(prev => prev.filter(r => r.id !== id));
+                applyModerationCountUpdate();
+                setSelectedFoundReport(null);
+            }
+        } catch (error) {
+            toast.error('Failed to approve report');
+        }
+    };
+
+    const handleRejectFound = async (id, reason) => {
+        try {
+            const result = await rejectFoundReport(id, reason);
+            if (result.success) {
+                toast.success('Found report rejected');
+                setPendingFoundReports(prev => prev.filter(r => r.id !== id));
+                applyModerationCountUpdate();
+                setSelectedFoundReport(null);
+            }
+        } catch (error) {
+            toast.error('Failed to reject report');
+        }
+    };
 
     if (loading) {
         return (
@@ -349,17 +482,13 @@ function OverviewSection({ data }) {
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                         সিস্টেম সচল
                     </span>
-                    <button className="flex items-center gap-1.5 text-xs font-bold bg-red-500 text-white
-                                       px-4 py-2 rounded-xl hover:bg-red-600 transition-colors shadow-sm">
-                        <FileText size={13} /> নতুন রিপোর্ট
-                    </button>
                 </div>
             </div>
 
             {/* KPI cards */}
             <div className="grid grid-cols-2 xl:grid-cols-2 gap-4">
                 <KpiCard title="মোট রিপোর্ট" value={stats.totalReports} sub="সর্বকালীন" color="bg-blue-50 text-blue-500" icon={FileText} />
-                <KpiCard title="সক্রিয় নিখোঁজ" value={stats.activeMissing} sub={stats.totalReports ? `মোটের ${((stats.activeMissing / stats.totalReports) * 100).toFixed(1)}%` : '—'} color="bg-amber-50 text-amber-500" icon={AlertTriangle} />
+                <KpiCard title="সক্রিয় নিখোঁজ" value={stats.activeMissing} sub={stats.totalReports ? `মোটের ${toBnDigits(((stats.activeMissing / stats.totalReports) * 100).toFixed(1))}%` : '—'} color="bg-amber-50 text-amber-500" icon={AlertTriangle} />
             </div>
 
             {/* Charts row */}
@@ -376,12 +505,12 @@ function OverviewSection({ data }) {
                         <div className="flex items-end gap-3 h-36">
                             {monthlyData.map((d, i) => (
                                 <div key={i} className="flex-1 flex flex-col items-center gap-1.5">
-                                    <span className="text-[10px] font-bold text-gray-500">{d.value}</span>
+                                    <span className="text-[10px] font-bold text-gray-500">{toBnNumber(d.value)}</span>
                                     <div className="w-full rounded-t-lg bg-red-100 relative overflow-hidden"
                                         style={{ height: `${(d.value / barMax) * 120}px` }}>
                                         <div className="absolute inset-0 bg-gradient-to-t from-red-500 to-red-400 rounded-t-lg" />
                                     </div>
-                                    <span className="text-[9px] text-gray-400">{d.label}</span>
+                                    <span className="text-[9px] text-gray-400">{toBnMonthLabel(d.label)}</span>
                                 </div>
                             ))}
                         </div>
@@ -423,8 +552,11 @@ function OverviewSection({ data }) {
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                 <div className="flex items-center justify-between px-5 py-4 border-b border-gray-50">
                     <h3 className="font-black text-gray-800 text-sm">সাম্প্রতিক রিপোর্ট</h3>
-                    <button className="flex items-center gap-1 text-xs text-red-500 font-semibold hover:underline">
-                        সব দেখুন <ArrowRight size={12} />
+                    <button
+                        onClick={() => setShowAllRecentReports(prev => !prev)}
+                        className="flex items-center gap-1 text-xs text-red-500 font-semibold hover:underline"
+                    >
+                        {showAllRecentReports ? 'কম দেখুন' : 'সব দেখুন'} <ArrowRight size={12} />
                     </button>
                 </div>
                 {reports.length === 0 ? (
@@ -440,11 +572,11 @@ function OverviewSection({ data }) {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-50">
-                                {reports.map(r => {
+                                {visibleRecentReports.map(r => {
                                     const s = STATUS_STYLE[r.status] ?? STATUS_STYLE.pending;
                                     return (
                                         <tr key={r.id} className="hover:bg-gray-50/50 transition-colors">
-                                            <td className="px-5 py-3.5 text-xs text-gray-400 font-mono">#{r.id}</td>
+                                            <td className="px-5 py-3.5 text-xs text-gray-400 font-mono">#{toBnDigits(r.id)}</td>
                                             <td className="px-5 py-3.5">
                                                 <div className="flex items-center gap-2.5">
                                                     <div className="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center text-[10px] font-black text-gray-500 flex-shrink-0">
@@ -453,18 +585,91 @@ function OverviewSection({ data }) {
                                                     <span className="font-semibold text-gray-700 text-xs">{r.name}</span>
                                                 </div>
                                             </td>
-                                            <td className="px-5 py-3.5 text-xs text-gray-500">{r.age}</td>
+                                            <td className="px-5 py-3.5 text-xs text-gray-500">{typeof r.age === 'number' || /^\d+(\.\d+)?$/.test(String(r.age ?? '')) ? toBnDigits(r.age) : (r.age ?? '—')}</td>
                                             <td className="px-5 py-3.5 text-xs text-gray-500">{r.division}</td>
                                             <td className="px-5 py-3.5">
                                                 <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${s.cls}`}>{s.label}</span>
                                             </td>
-                                            <td className="px-5 py-3.5 text-xs text-gray-400">{r.date}</td>
+                                            <td className="px-5 py-3.5 text-xs text-gray-400">{r.date ? toBnDigits(r.date) : '—'}</td>
                                             <td className="px-5 py-3.5">
                                                 <div className="flex items-center gap-1">
                                                     <button className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors" title="দেখুন"><Eye size={13} /></button>
                                                     <button className="p-1.5 text-emerald-500 hover:bg-emerald-50 rounded-lg transition-colors" title="যাচাই করুন"><CheckCircle size={13} /></button>
                                                     <button className="p-1.5 text-amber-500 hover:bg-amber-50 rounded-lg transition-colors" title="বন্ধ করুন"><AlertTriangle size={13} /></button>
                                                 </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </div>
+
+            {/* Pending Found Reports */}
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                <div className="flex items-center justify-between px-5 py-4 border-b border-gray-50">
+                    <h3 className="font-black text-gray-800 text-sm flex items-center gap-2">
+                        <Zap size={14} className="text-purple-500" /> পাওয়া ব্যক্তির পেন্ডিং রিপোর্ট
+                    </h3>
+                    <span className="text-[10px] font-bold bg-purple-100 text-purple-700 px-2 py-1 rounded-full">
+                        {pendingFoundReports.length}
+                    </span>
+                </div>
+                {pendingFoundReports.length === 0 ? (
+                    <EmptyState message="কোনো পেন্ডিং রিপোর্ট নেই" />
+                ) : (
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                            <thead>
+                                <tr className="bg-gray-50 text-left">
+                                    {['#', 'নাম', 'বিভাগ', 'খোঁজে পাওয়া', 'AI ম্যাচ', 'অ্যাকশন'].map(h => (
+                                        <th key={h} className="px-5 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wide">{h}</th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-50">
+                                {pendingFoundReports.map(r => {
+                                    const matchCount = r.ai_matches?.length || 0;
+                                    const highMatches = r.ai_matches?.filter(m => m.match_level === 'high')?.length || 0;
+                                    return (
+                                        <tr
+                                            key={r.id}
+                                            className="hover:bg-gray-50/50 transition-colors cursor-pointer"
+                                            onClick={() => setSelectedFoundReport(r)}
+                                        >
+                                            <td className="px-5 py-3.5 text-xs text-gray-400 font-mono">#{toBnDigits(r.id)}</td>
+                                            <td className="px-5 py-3.5">
+                                                <div className="flex items-center gap-2.5">
+                                                    <div className="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center text-[10px] font-black text-gray-500 flex-shrink-0">
+                                                        {r.name?.[0] ?? '?'}
+                                                    </div>
+                                                    <span className="font-semibold text-gray-700 text-xs">{r.name}</span>
+                                                </div>
+                                            </td>
+                                            <td className="px-5 py-3.5 text-xs text-gray-500">{r.district}</td>
+                                            <td className="px-5 py-3.5 text-xs text-gray-500">{r.found_date ? toBnDigits(r.found_date) : '—'}</td>
+                                            <td className="px-5 py-3.5">
+                                                <div className="flex items-center gap-1.5">
+                                                    {highMatches > 0 && (
+                                                        <span className="text-xs font-bold bg-red-100 text-red-700 px-2 py-1 rounded-full">
+                                                            {highMatches.toLocaleString('bn-BD')} উচ্চ
+                                                        </span>
+                                                    )}
+                                                    <span className="text-xs text-gray-500">মোট {matchCount.toLocaleString('bn-BD')}</span>
+                                                </div>
+                                            </td>
+                                            <td className="px-5 py-3.5">
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setSelectedFoundReport(r);
+                                                    }}
+                                                    className="text-xs font-bold bg-purple-100 text-purple-600 px-3 py-1.5 rounded-lg hover:bg-purple-200 transition-colors"
+                                                >
+                                                    পর্যালোচনা
+                                                </button>
                                             </td>
                                         </tr>
                                     );
@@ -527,6 +732,15 @@ function OverviewSection({ data }) {
                     )}
                 </div>
             </div>
+
+            {selectedFoundReport && (
+                <FoundReportMatchModal
+                    report={selectedFoundReport}
+                    onClose={() => setSelectedFoundReport(null)}
+                    onApprove={handleApproveFound}
+                    onReject={handleRejectFound}
+                />
+            )}
         </div>
     );
 }
@@ -549,9 +763,6 @@ function ReportsSection({ data }) {
         <div className="space-y-5">
             <div className="flex items-center justify-between">
                 <h2 className="text-xl font-black text-gray-800">রিপোর্ট ব্যবস্থাপনা</h2>
-                <button className="flex items-center gap-1.5 text-xs font-bold bg-red-500 text-white px-4 py-2 rounded-xl hover:bg-red-600">
-                    <FileText size={13} /> নতুন রিপোর্ট যোগ করুন
-                </button>
             </div>
 
             <div className="flex gap-2 overflow-x-auto pb-1">
@@ -693,12 +904,12 @@ function AnalyticsSection({ data }) {
                         <div className="flex items-end gap-3 h-44">
                             {monthlyData.map((d, i) => (
                                 <div key={i} className="flex-1 flex flex-col items-center gap-1.5">
-                                    <span className="text-[10px] font-bold text-gray-500">{d.value}</span>
+                                    <span className="text-[10px] font-bold text-gray-500">{toBnNumber(d.value)}</span>
                                     <div className="w-full rounded-t-lg relative overflow-hidden bg-red-50"
                                         style={{ height: `${(d.value / barMax) * 150}px` }}>
                                         <div className="absolute inset-0 bg-gradient-to-t from-red-500 to-red-400 rounded-t-lg" />
                                     </div>
-                                    <span className="text-[9px] text-gray-400">{d.label}</span>
+                                    <span className="text-[9px] text-gray-400">{toBnMonthLabel(d.label)}</span>
                                 </div>
                             ))}
                         </div>
@@ -724,9 +935,9 @@ function AnalyticsSection({ data }) {
                                     <div className="h-full bg-gradient-to-r from-red-400 to-red-500 rounded-full"
                                         style={{ width: `${d.max > 0 ? (d.count / d.max) * 100 : 0}%` }} />
                                 </div>
-                                <span className="text-xs font-bold text-gray-700 w-10">{d.count}</span>
+                                <span className="text-xs font-bold text-gray-700 w-10">{toBnNumber(d.count)}</span>
                                 <span className="text-[10px] text-gray-400">
-                                    {stats.totalReports > 0 ? ((d.count / stats.totalReports) * 100).toFixed(1) : 0}%
+                                    {stats.totalReports > 0 ? toBnDigits(((d.count / stats.totalReports) * 100).toFixed(1)) : toBnDigits(0)}%
                                 </span>
                             </div>
                         ))}

@@ -1,6 +1,7 @@
 <?php
 namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
+use App\Models\FoundReport;
 use App\Models\User;
 use App\Models\MissingReport;
 use App\Models\VerificationCode;
@@ -10,11 +11,18 @@ class AdminController extends Controller
 {
     public function stats()
     {
-        // Total reports = all approved/published reports (visible to public)
-        $totalReports = MissingReport::where('approved', 1)->count();
+        $missingTotal = MissingReport::count();
+        $foundTotal = FoundReport::count();
+
+        // Total reports includes both missing and found reports.
+        $totalReports = $missingTotal + $foundTotal;
         
-        // Active Missing = approved reports where person is STILL missing (not found/closed)
-        $activeMissing = MissingReport::where('approved', 1)
+        // Pending across both report types.
+        $activeMissing = MissingReport::where('approved', 0)
+                                      ->where('status', '!=', 'found')
+                                      ->where('status', '!=', 'closed')
+                                      ->count()
+                        + FoundReport::where('approved', 0)
                                       ->where('status', '!=', 'found')
                                       ->where('status', '!=', 'closed')
                                       ->count();
@@ -26,7 +34,7 @@ class AdminController extends Controller
         $successRate = $totalReports > 0 ? round((($totalReports - $activeMissing) / $totalReports) * 100, 1) : 0;
 
         $monthlyData = $this->monthlyReportSeries();
-        $statusData = $this->statusDistribution($totalReports, $activeMissing);
+        $statusData = $this->statusDistribution($totalReports);
         $divisions = $this->divisionDistribution();
         $recentUsers = $this->recentUsers();
         $activity = $this->activityFeed();
@@ -35,6 +43,8 @@ class AdminController extends Controller
             'stats' => [
                 'totalReports' => $totalReports,
                 'activeMissing' => $activeMissing,
+                'missingReports' => $missingTotal,
+                'foundReports' => $foundTotal,
                 'users' => $users,
                 'newUsersWeek' => $newUsersWeek,
                 'successRate' => $successRate,
@@ -49,20 +59,49 @@ class AdminController extends Controller
 
     public function recentReports()
     {
-        $reports = MissingReport::query()
+        $missingReports = MissingReport::query()
             ->with('user')
             ->latest('created_at')
-            ->limit(10)
+            ->limit(20)
             ->get()
             ->map(function ($record) {
                 return [
                     'id' => $record->id,
+                    'type' => 'missing',
                     'name' => $record->name,
                     'age' => $record->age ?? '—',
                     'division' => $record->district ?? 'N/A',
-                    'status' => $record->approved ? 'approved' : 'pending',
+                    'status' => $record->status ?: ($record->approved ? 'verified' : 'pending'),
                     'date' => optional($record->created_at)->format('Y-m-d'),
+                    'created_at' => optional($record->created_at)?->timestamp ?? 0,
                 ];
+            });
+
+        $foundReports = FoundReport::query()
+            ->with('user')
+            ->latest('created_at')
+            ->limit(20)
+            ->get()
+            ->map(function ($record) {
+                return [
+                    'id' => $record->id,
+                    'type' => 'found',
+                    'name' => $record->name ?? 'অজানা',
+                    'age' => $record->approximate_age ?? '—',
+                    'division' => $record->district ?? 'N/A',
+                    'status' => $record->status ?: ($record->approved ? 'published' : 'pending'),
+                    'date' => optional($record->created_at)->format('Y-m-d'),
+                    'created_at' => optional($record->created_at)?->timestamp ?? 0,
+                ];
+            });
+
+        $reports = $missingReports
+            ->concat($foundReports)
+            ->sortByDesc('created_at')
+            ->take(10)
+            ->map(function ($record) {
+                unset($record['created_at']);
+                return $record;
             })
             ->values();
 
@@ -123,37 +162,62 @@ class AdminController extends Controller
 
     private function monthlyReportSeries()
     {
-        $start = Carbon::now()->startOfMonth()->subMonths(5);
-        $rows = MissingReport::query()
+        $start = Carbon::now()->startOfMonth()->subMonths(11);
+
+        $missingRows = MissingReport::query()
+            ->selectRaw('DATE_FORMAT(created_at, "%Y-%m") as month_key, COUNT(*) as total')
+            ->where('created_at', '>=', $start)
+            ->groupBy('month_key')
+            ->pluck('total', 'month_key');
+
+        $foundRows = FoundReport::query()
             ->selectRaw('DATE_FORMAT(created_at, "%Y-%m") as month_key, COUNT(*) as total')
             ->where('created_at', '>=', $start)
             ->groupBy('month_key')
             ->pluck('total', 'month_key');
 
         $series = [];
-        for ($i = 5; $i >= 0; $i--) {
+        for ($i = 11; $i >= 0; $i--) {
             $date = Carbon::now()->startOfMonth()->subMonths($i);
             $key = $date->format('Y-m');
             $series[] = [
                 'label' => $date->format('M'),
-                'value' => (int) ($rows[$key] ?? 0),
+                'value' => (int) (($missingRows[$key] ?? 0) + ($foundRows[$key] ?? 0)),
             ];
         }
 
         return $series;
     }
 
-    private function statusDistribution($totalReports, $activeMissing)
+    private function statusDistribution(int $totalReports)
     {
-        $resolved = max($totalReports - $activeMissing, 0);
-        $pending = $activeMissing;
+        $pending = MissingReport::where('approved', 0)->count()
+            + FoundReport::where('approved', 0)->where('status', 'pending')->count();
 
-        $segments = [
-            ['label' => 'Pending', 'value' => $pending, 'color' => '#f59e0b'],
-            ['label' => 'Resolved', 'value' => $resolved, 'color' => '#10b981'],
-        ];
+        $verified = MissingReport::where('approved', 1)
+            ->whereNotIn('status', ['found', 'closed'])
+            ->count();
 
-        $total = array_sum(array_column($segments, 'value'));
+        $resolved = MissingReport::whereIn('status', ['found', 'closed'])->count();
+        $published = FoundReport::where('approved', 1)->where('status', 'published')->count();
+        $rejected = FoundReport::where('status', 'rejected')->count();
+        $knownTotal = $pending + $verified + $resolved + $published + $rejected;
+        $other = max($totalReports - $knownTotal, 0);
+
+        $segments = array_values(array_filter([
+            ['key' => 'pending', 'label' => 'Pending', 'value' => $pending, 'color' => '#f59e0b'],
+            ['key' => 'verified', 'label' => 'Verified', 'value' => $verified, 'color' => '#3b82f6'],
+            ['key' => 'resolved', 'label' => 'Resolved', 'value' => $resolved, 'color' => '#10b981'],
+            ['key' => 'published', 'label' => 'Published', 'value' => $published, 'color' => '#14b8a6'],
+            ['key' => 'rejected', 'label' => 'Rejected', 'value' => $rejected, 'color' => '#ef4444'],
+            ['key' => 'other', 'label' => 'Other', 'value' => $other, 'color' => '#6b7280'],
+        ], fn ($item) => $item['value'] > 0));
+
+        if (empty($segments)) {
+            $segments[] = ['key' => 'pending', 'label' => 'Pending', 'value' => 0, 'color' => '#f59e0b'];
+        }
+
+        $total = max($totalReports, 0);
 
         return array_map(function ($item) use ($total) {
             $item['pct'] = $total > 0 ? round(($item['value'] / $total) * 100, 1) : 0;
@@ -163,9 +227,11 @@ class AdminController extends Controller
 
     private function divisionDistribution()
     {
+        $districtExpr = 'COALESCE(NULLIF(TRIM(district), ""), "Unknown")';
+
         $rows = MissingReport::query()
-            ->selectRaw('COALESCE(NULLIF(TRIM(district), ""), "Unknown") as name, COUNT(*) as count')
-            ->groupBy('name')
+            ->selectRaw("{$districtExpr} as name, COUNT(*) as count")
+            ->groupByRaw($districtExpr)
             ->orderByDesc('count')
             ->limit(8)
             ->get();
