@@ -504,7 +504,7 @@ export default function UserDashboardPage() {
                                         </div>
 
                                         {selectedAiMatchDetails.matches.length === 0 ? (
-                                            <div className="text-center py-8 text-sm text-gray-500">এই রিপোর্টে এখনো AI ম্যাচ পাওয়া যায়নি</div>
+                                            <div className="text-center py-8 text-sm text-gray-500">এই উদ্ধার রিপোর্টের জন্য ৬০% এর বেশি কোনো AI ম্যাচ পাওয়া যায়নি</div>
                                         ) : (
                                             <div className="space-y-3">
                                                 {selectedAiMatchDetails.matches.map((m, idx) => (
