@@ -13,6 +13,8 @@ use Illuminate\Validation\ValidationException;
 
 class FoundPersonController extends Controller
 {
+    private const USER_AI_MATCH_MIN_SCORE = 60.0;
+
     public function __construct(
         protected CloudinaryService $cloudinaryService,
         protected OpenRouterMatchingService $matchingService,
@@ -141,7 +143,8 @@ class FoundPersonController extends Controller
             ->latest('created_at')
             ->get()
             ->map(function (FoundReport $report) {
-                $query = $this->visibleMatchesQuery($report->id);
+                $query = $this->visibleMatchesQuery($report->id)
+                    ->where('total_score', '>', self::USER_AI_MATCH_MIN_SCORE);
                 $matchCount = (clone $query)->count();
                 $topMatch = (clone $query)->first();
 
@@ -187,6 +190,7 @@ class FoundPersonController extends Controller
         }
 
         $matches = $this->visibleMatchesQuery($report->id)
+            ->where('total_score', '>', self::USER_AI_MATCH_MIN_SCORE)
             ->limit(20)
             ->get()
             ->map(function ($match) {
