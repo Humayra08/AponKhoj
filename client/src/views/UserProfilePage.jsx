@@ -732,7 +732,7 @@ export default function UserProfilePage() {
             </div>
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-                <div className="flex gap-6">
+                <div className="flex flex-col lg:flex-row gap-6">
 
                     {/* ── Sidebar (desktop) ── */}
                     <aside className="hidden lg:flex flex-col w-64 flex-shrink-0">

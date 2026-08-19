@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { Phone, Mail, Search } from 'lucide-react';
+import { Phone, Mail } from 'lucide-react';
 import { useAuth } from '../helpers/AuthContext';
 
 const Footer = () => {
@@ -21,10 +21,7 @@ const Footer = () => {
                     {/* Logo & Description */}
                     <div className="md:col-span-1">
                         <div className="flex items-center gap-2 mb-3">
-                            <div className="w-8 h-8 bg-white/20 rounded-md flex items-center justify-center">
-                                <Search size={16} className="text-white" />
-                            </div>
-                            <span className="font-bold text-lg">আপনখোঁজ</span>
+                            <img src="/logo1.png" alt="আপনখোঁজ" className="h-12 w-auto" />
                         </div>
                         <p className="text-white/70 text-sm leading-relaxed">
                             হারিয়ে যাওয়া প্রিয়জনকে খুঁজে পেতে এবং উদ্ধারকৃত ব্যক্তিদের পরিবারের সাথে পুনর্মিলন ঘটাতে আমরা একটি নির্ভরযোগ্য ও মানবিক প্ল্যাটফর্ম হিসেবে কাজ করছি।

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, Shirt, ArrowRight, SlidersHorizontal, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeftOpen, Shield, Calendar } from 'lucide-react';
+import { MapPin, Shirt, ArrowRight, SlidersHorizontal, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeftOpen, Shield, Calendar, X } from 'lucide-react';
 import apiClient from '../api';
 
 const avatar = (seed, gender, age) => {
@@ -18,13 +18,14 @@ const COLORS = ['লাল', 'নীল', 'হলুদ', 'সাদা', 'ক�
 const PER_PAGE = 6;
 
 const conditionColor = c => c === 'স্বাভাবিক'
-    ? 'bg-accent-teal/10 text-accent-teal'
-    : 'bg-accent-red/10 text-accent-red';
+    ? 'bg-primary/10 text-primary'
+    : 'bg-secondary/10 text-secondary';
 
 export default function FoundListPage() {
     const [allFound, setAllFound] = useState([]);
     const [loading, setLoading] = useState(true);
     const [sidebarOpen, setSidebarOpen] = useState(true);
+    const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
     const [activeDiv, setActiveDiv] = useState('সব');
     const [genderFilter, setGenderFilter] = useState('সবাই');
     const [conditionFilter, setConditionFilter] = useState('সব');
@@ -83,6 +84,14 @@ export default function FoundListPage() {
     const toggleColor = c =>
         setSelectedColors(prev => prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c]);
 
+    const filterBadgeCount = [
+        activeDiv !== 'সব',
+        genderFilter !== 'সবাই',
+        conditionFilter !== 'সব',
+        ageRange !== 100,
+        selectedColors.length > 0,
+    ].filter(Boolean).length;
+
     const clearAll = () => {
         setActiveDiv('সব');
         setGenderFilter('সবাই');
@@ -115,7 +124,7 @@ export default function FoundListPage() {
                     onError={e => { e.target.src = `https://api.dicebear.com/7.x/shapes/png?seed=${r.id}&size=300&backgroundColor=d4ede9`; }}
                 />
                 {/* Found badge */}
-                <span className="absolute top-2 left-2 bg-accent-teal text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow">
+                <span className="absolute top-2 left-2 bg-primary text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow">
                     পাওয়া গেছে
                 </span>
                 <span className={`absolute top-2 right-2 text-[10px] font-bold px-2.5 py-1 rounded-full ${conditionColor(r.condition)}`}>
@@ -131,7 +140,7 @@ export default function FoundListPage() {
                 </div>
                 <div className="space-y-1.5 text-xs text-gray-500 mb-3">
                     <div className="flex items-center gap-1.5">
-                        <Shield size={11} className="text-accent-teal flex-shrink-0" />
+                        <Shield size={11} className="text-primary flex-shrink-0" />
                         <span className="truncate">{r.foundAt}</span>
                     </div>
                     <div className="flex items-center gap-1.5">
@@ -148,7 +157,7 @@ export default function FoundListPage() {
                     </div>
                 </div>
                 <Link to={`/found-report/${r.id}`}
-                    className="flex items-center justify-center gap-1.5 w-full border border-accent-teal text-accent-teal text-xs py-2 rounded-xl hover:bg-accent-teal hover:text-white transition-colors font-medium">
+                    className="flex items-center justify-center gap-1.5 w-full border border-primary text-primary text-xs py-2 rounded-xl hover:bg-primary hover:text-white transition-colors font-medium">
                     বিস্তারিত দেখুন <ArrowRight size={12} />
                 </Link>
             </div>
@@ -158,7 +167,7 @@ export default function FoundListPage() {
     return (
         <div className="bg-background min-h-screen">
             {/* Page Header */}
-            <div className="bg-accent-teal text-white py-10 px-4">
+            <div className="bg-primary text-white py-10 px-4">
                 <div className="max-w-7xl mx-auto">
                     <div className="flex items-center gap-3 mb-2">
                         <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
@@ -182,22 +191,22 @@ export default function FoundListPage() {
             </div>
 
             <div className="max-w-7xl mx-auto px-4 py-6 flex gap-6">
-                {/* ── Sidebar ── */}
-                <aside className={`flex-shrink-0 transition-all duration-300 ease-in-out overflow-hidden ${sidebarOpen ? 'w-52' : 'w-10'}`}>
+                {/* ── Sidebar (desktop only) ── */}
+                <aside className={`hidden lg:block flex-shrink-0 transition-all duration-300 ease-in-out overflow-hidden ${sidebarOpen ? 'w-52' : 'w-10'}`}>
                     <div className="relative">
                         {/* Toggle button */}
                         <button
                             onClick={() => setSidebarOpen(o => !o)}
-                            className={`flex items-center justify-center w-8 h-8 rounded-lg bg-white border border-gray-200 shadow-sm text-accent-teal hover:bg-accent-teal hover:text-white transition-all mb-3 ${sidebarOpen ? 'ml-auto mr-0' : 'mx-auto'}`}>
+                            className={`flex items-center justify-center w-8 h-8 rounded-lg bg-white border border-gray-200 shadow-sm text-primary hover:bg-primary hover:text-white transition-all mb-3 ${sidebarOpen ? 'ml-auto mr-0' : 'mx-auto'}`}>
                             {sidebarOpen ? <PanelLeftClose size={15} /> : <PanelLeftOpen size={15} />}
                         </button>
 
                         {/* Collapsed mini icons */}
                         {!sidebarOpen && (
                             <div className="flex flex-col items-center gap-3 pt-1">
-                                <button onClick={() => setSidebarOpen(true)} className="text-gray-400 hover:text-accent-teal transition-colors"><SlidersHorizontal size={16} /></button>
-                                <button onClick={() => setSidebarOpen(true)} className="text-[10px] font-bold text-gray-400 hover:text-accent-teal">বয়স</button>
-                                <button onClick={() => setSidebarOpen(true)} className="text-[10px] font-bold text-gray-400 hover:text-accent-teal">রঙ</button>
+                                <button onClick={() => setSidebarOpen(true)} className="text-gray-400 hover:text-primary transition-colors"><SlidersHorizontal size={16} /></button>
+                                <button onClick={() => setSidebarOpen(true)} className="text-[10px] font-bold text-gray-400 hover:text-primary">বয়স</button>
+                                <button onClick={() => setSidebarOpen(true)} className="text-[10px] font-bold text-gray-400 hover:text-primary">রঙ</button>
                             </div>
                         )}
 
@@ -207,17 +216,17 @@ export default function FoundListPage() {
                                 {/* Header */}
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-1.5 font-black text-gray-800">
-                                        <SlidersHorizontal size={16} className="text-accent-teal" />
+                                        <SlidersHorizontal size={16} className="text-primary" />
                                         ফিল্টার
                                     </div>
-                                    <button onClick={clearAll} className="text-xs text-accent-teal hover:underline">সব মুছুন</button>
+                                    <button onClick={clearAll} className="text-xs text-primary hover:underline">সব মুছুন</button>
                                 </div>
 
                                 {/* Division */}
                                 <div>
                                     <p className="text-xs font-bold text-gray-600 mb-2">বিভাগ</p>
                                     <select value={activeDiv} onChange={e => { setActiveDiv(e.target.value); setPage(1); }}
-                                        className="w-full border border-gray-200 rounded-xl p-2 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-accent-teal/30 bg-white">
+                                        className="w-full border border-gray-200 rounded-xl p-2 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white">
                                         {DIVISIONS.map(d => <option key={d}>{d}</option>)}
                                     </select>
                                 </div>
@@ -228,7 +237,7 @@ export default function FoundListPage() {
                                     <div className="grid grid-cols-3 gap-1 bg-gray-100 p-1 rounded-xl">
                                         {GENDERS.map(g => (
                                             <button key={g} onClick={() => { setGenderFilter(g); setPage(1); }}
-                                                className={`text-[10px] py-1.5 rounded-lg font-medium transition-all ${genderFilter === g ? 'bg-white shadow text-accent-teal' : 'text-gray-500'}`}>
+                                                className={`text-[10px] py-1.5 rounded-lg font-medium transition-all ${genderFilter === g ? 'bg-white shadow text-primary' : 'text-gray-500'}`}>
                                                 {g}
                                             </button>
                                         ))}
@@ -241,7 +250,7 @@ export default function FoundListPage() {
                                     <div className="space-y-1">
                                         {CONDITIONS.map(c => (
                                             <button key={c} onClick={() => { setConditionFilter(c); setPage(1); }}
-                                                className={`w-full text-left text-xs px-3 py-2 rounded-xl border transition-all ${conditionFilter === c ? 'border-accent-teal bg-accent-teal/5 text-accent-teal font-bold' : 'border-gray-100 text-gray-600 hover:border-accent-teal/40'}`}>
+                                                className={`w-full text-left text-xs px-3 py-2 rounded-xl border transition-all ${conditionFilter === c ? 'border-primary bg-primary/5 text-primary font-bold' : 'border-gray-100 text-gray-600 hover:border-primary/40'}`}>
                                                 {c}
                                             </button>
                                         ))}
@@ -256,7 +265,7 @@ export default function FoundListPage() {
                                     </div>
                                     <input type="range" min="0" max="100" value={ageRange}
                                         onChange={e => { setAgeRange(+e.target.value); setPage(1); }}
-                                        className="w-full h-1.5 bg-gray-200 rounded-full appearance-none cursor-pointer accent-accent-teal" />
+                                        className="w-full h-1.5 bg-gray-200 rounded-full appearance-none cursor-pointer accent-primary" />
                                 </div>
 
                                 {/* Clothing Color */}
@@ -265,7 +274,7 @@ export default function FoundListPage() {
                                     <div className="flex flex-wrap gap-1">
                                         {COLORS.map(c => (
                                             <button key={c} onClick={() => toggleColor(c)}
-                                                className={`text-[10px] px-2 py-1 rounded-full border transition-all ${selectedColors.includes(c) ? 'bg-accent-teal text-white border-accent-teal' : 'border-gray-200 text-gray-600 hover:border-accent-teal hover:text-accent-teal'}`}>
+                                                className={`text-[10px] px-2 py-1 rounded-full border transition-all ${selectedColors.includes(c) ? 'bg-primary text-white border-primary' : 'border-gray-200 text-gray-600 hover:border-primary hover:text-primary'}`}>
                                                 {c}
                                             </button>
                                         ))}
@@ -276,30 +285,137 @@ export default function FoundListPage() {
                     </div>
                 </aside>
 
+                {/* ── Mobile Filter Drawer ── */}
+                {mobileFilterOpen && (
+                    <div className="lg:hidden fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center">
+                        <div className="absolute inset-0 bg-black/40" onClick={() => setMobileFilterOpen(false)} />
+                        <div className="relative w-full sm:max-w-sm sm:rounded-2xl bg-white rounded-t-2xl max-h-[85vh] overflow-y-auto p-5">
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-1.5 font-black text-gray-800">
+                                    <SlidersHorizontal size={16} className="text-primary" />
+                                    ফিল্টার
+                                    {filterBadgeCount > 0 && (
+                                        <span className="ml-1 px-1.5 py-0.5 bg-secondary text-white text-[10px] font-bold rounded-full">
+                                            {filterBadgeCount}
+                                        </span>
+                                    )}
+                                </div>
+                                <button onClick={() => setMobileFilterOpen(false)} className="text-gray-400 hover:text-gray-600">
+                                    <X size={18} />
+                                </button>
+                            </div>
+
+                            <div className="space-y-5">
+                                {/* Division */}
+                                <div>
+                                    <p className="text-xs font-bold text-gray-600 mb-2">বিভাগ</p>
+                                    <select value={activeDiv} onChange={e => { setActiveDiv(e.target.value); setPage(1); }}
+                                        className="w-full border border-gray-200 rounded-xl p-2 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white">
+                                        {DIVISIONS.map(d => <option key={d}>{d}</option>)}
+                                    </select>
+                                </div>
+
+                                {/* Gender */}
+                                <div>
+                                    <p className="text-xs font-bold text-gray-600 mb-2">লিঙ্গ</p>
+                                    <div className="grid grid-cols-3 gap-1 bg-gray-100 p-1 rounded-xl">
+                                        {GENDERS.map(g => (
+                                            <button key={g} onClick={() => { setGenderFilter(g); setPage(1); }}
+                                                className={`text-[10px] py-1.5 rounded-lg font-medium transition-all ${genderFilter === g ? 'bg-white shadow text-primary' : 'text-gray-500'}`}>
+                                                {g}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Condition */}
+                                <div>
+                                    <p className="text-xs font-bold text-gray-600 mb-2">শারীরিক অবস্থা</p>
+                                    <div className="space-y-1">
+                                        {CONDITIONS.map(c => (
+                                            <button key={c} onClick={() => { setConditionFilter(c); setPage(1); }}
+                                                className={`w-full text-left text-xs px-3 py-2 rounded-xl border transition-all ${conditionFilter === c ? 'border-primary bg-primary/5 text-primary font-bold' : 'border-gray-100 text-gray-600 hover:border-primary/40'}`}>
+                                                {c}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Age Slider */}
+                                <div>
+                                    <p className="text-xs font-bold text-gray-600 mb-1">বয়সসীমা</p>
+                                    <div className="flex justify-between text-[10px] text-gray-400 mb-2">
+                                        <span>০ বছর</span><span>{ageRange} বছর</span>
+                                    </div>
+                                    <input type="range" min="0" max="100" value={ageRange}
+                                        onChange={e => { setAgeRange(+e.target.value); setPage(1); }}
+                                        className="w-full h-1.5 bg-gray-200 rounded-full appearance-none cursor-pointer accent-primary" />
+                                </div>
+
+                                {/* Clothing Color */}
+                                <div>
+                                    <p className="text-xs font-bold text-gray-600 mb-2">পোশাকের রঙ</p>
+                                    <div className="flex flex-wrap gap-1">
+                                        {COLORS.map(c => (
+                                            <button key={c} onClick={() => toggleColor(c)}
+                                                className={`text-[10px] px-2 py-1 rounded-full border transition-all ${selectedColors.includes(c) ? 'bg-primary text-white border-primary' : 'border-gray-200 text-gray-600 hover:border-primary hover:text-primary'}`}>
+                                                {c}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="flex gap-2 pt-2">
+                                    {filterBadgeCount > 0 && (
+                                        <button onClick={clearAll} className="flex-1 text-sm text-primary border border-primary/30 rounded-xl py-2.5 font-semibold">
+                                            সব মুছুন
+                                        </button>
+                                    )}
+                                    <button onClick={() => setMobileFilterOpen(false)} className="flex-1 text-sm bg-primary text-white rounded-xl py-2.5 font-semibold">
+                                        প্রয়োগ করুন
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* ── Main Content ── */}
                 <main className="flex-1 min-w-0">
                     {/* Division Pills */}
                     <div className="flex items-center gap-2 mb-5 overflow-x-auto pb-1">
                         {DIVISIONS.map(d => (
                             <button key={d} onClick={() => { setActiveDiv(d); setPage(1); }}
-                                className={`flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-all border ${activeDiv === d ? 'bg-accent-teal text-white border-accent-teal shadow-sm' : 'bg-white text-gray-600 border-gray-200 hover:border-accent-teal hover:text-accent-teal'}`}>
+                                className={`flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-all border ${activeDiv === d ? 'bg-primary text-white border-primary shadow-sm' : 'bg-white text-gray-600 border-gray-200 hover:border-primary hover:text-primary'}`}>
                                 {d}
                             </button>
                         ))}
                     </div>
 
                     {/* Title + Sort */}
-                    <div className="flex items-start justify-between gap-4 mb-4">
+                    <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
                         <div>
                             <h2 className="text-xl font-black text-gray-800">উদ্ধার হওয়া অজ্ঞাত ব্যক্তি</h2>
                             <p className="text-xs text-gray-400 mt-0.5">{filtered.length}টি রেকর্ড পাওয়া গেছে</p>
                         </div>
-                        <div className="flex items-center gap-2 flex-shrink-0">
+                        <div className="flex items-center gap-2 w-full sm:w-auto sm:flex-shrink-0">
                             <span className="text-xs text-gray-400 whitespace-nowrap">সর্ট:</span>
                             <select value={sortBy} onChange={e => setSortBy(e.target.value)}
-                                className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none bg-white text-gray-700">
+                                className="flex-1 sm:flex-none min-w-0 text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none bg-white text-gray-700">
                                 {SORT_OPTIONS.map(o => <option key={o}>{o}</option>)}
                             </select>
+                            <button
+                                onClick={() => setMobileFilterOpen(true)}
+                                className="lg:hidden relative flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-lg bg-white border border-gray-200 shadow-sm text-primary"
+                                title="ফিল্টার"
+                            >
+                                <SlidersHorizontal size={15} />
+                                {filterBadgeCount > 0 && (
+                                    <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-secondary text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                                        {filterBadgeCount}
+                                    </span>
+                                )}
+                            </button>
                         </div>
                     </div>
 
@@ -312,10 +428,10 @@ export default function FoundListPage() {
                         <div className="text-center py-20">
                             <div className="text-4xl mb-3">🔍</div>
                             <p className="text-gray-500 font-medium">কোনো রেকর্ড পাওয়া যায়নি</p>
-                            <button onClick={clearAll} className="mt-3 text-sm text-accent-teal hover:underline">ফিল্টার সাফ করুন</button>
+                            <button onClick={clearAll} className="mt-3 text-sm text-primary hover:underline">ফিল্টার সাফ করুন</button>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
                             {paginated.map(r => <Card key={r.id} r={r} />)}
                         </div>
                     )}
@@ -327,7 +443,7 @@ export default function FoundListPage() {
                                 setPage(p => Math.max(1, p - 1));
                                 window.scrollTo({ top: 0, behavior: 'smooth' });
                             }} disabled={page === 1}
-                                className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:border-accent-teal hover:text-accent-teal disabled:opacity-30 transition-colors">
+                                className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:border-primary hover:text-primary disabled:opacity-30 transition-colors">
                                 <ChevronLeft size={14} />
                             </button>
                             {Array.from({ length: totalPages }, (_, i) => i + 1).map(n => (
@@ -335,7 +451,7 @@ export default function FoundListPage() {
                                     setPage(n);
                                     window.scrollTo({ top: 0, behavior: 'smooth' });
                                 }}
-                                    className={`w-8 h-8 rounded-lg text-sm font-medium transition-all ${page === n ? 'bg-accent-teal text-white shadow-sm' : 'border border-gray-200 text-gray-600 hover:border-accent-teal hover:text-accent-teal'}`}>
+                                    className={`w-8 h-8 rounded-lg text-sm font-medium transition-all ${page === n ? 'bg-primary text-white shadow-sm' : 'border border-gray-200 text-gray-600 hover:border-primary hover:text-primary'}`}>
                                     {n}
                                 </button>
                             ))}
@@ -343,7 +459,7 @@ export default function FoundListPage() {
                                 setPage(p => Math.min(totalPages, p + 1));
                                 window.scrollTo({ top: 0, behavior: 'smooth' });
                             }} disabled={page === totalPages}
-                                className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:border-accent-teal hover:text-accent-teal disabled:opacity-30 transition-colors">
+                                className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:border-primary hover:text-primary disabled:opacity-30 transition-colors">
                                 <ChevronRight size={14} />
                             </button>
                         </div>
