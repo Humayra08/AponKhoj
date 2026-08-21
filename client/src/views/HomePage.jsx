@@ -77,7 +77,7 @@ const HomePage = () => {
             <section className="relative overflow-hidden bg-gradient-to-br from-primary via-primary to-[#0c2e20] py-20 px-4">
                 {/* Decorative circles */}
                 <div className="absolute top-0 right-0 w-96 h-96 bg-secondary/20 rounded-full translate-x-1/2 -translate-y-1/2 blur-3xl pointer-events-none" />
-                <div className="absolute bottom-0 left-0 w-64 h-64 bg-accent-teal/20 rounded-full -translate-x-1/3 translate-y-1/3 blur-2xl pointer-events-none" />
+                <div className="absolute bottom-0 left-0 w-96 h-96 bg-secondary/20 rounded-full -translate-x-1/2 translate-y-1/2 blur-3xl pointer-events-none" />
 
                 <div className="max-w-7xl mx-auto relative z-10 flex flex-col items-center justify-center text-center">
                     <div className="max-w-4xl">

@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
     FileText, Bell, Users, Clock,
     Search, MapPin, ChevronRight, ChevronLeft, Zap, Eye, X,
-    UserCircle2, AlertTriangle, Settings
+    UserCircle2, AlertTriangle, Settings, Phone, Calendar
 } from 'lucide-react';
 import { useAuth } from '../helpers/AuthContext';
 import apiClient from '../api';
@@ -192,12 +192,66 @@ export default function UserDashboardPage() {
         <div className="min-h-screen bg-background">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
 
-                {/* ── Welcome ── */}
-                <div className="mb-6">
-                    <h1 className="text-2xl font-black text-gray-800">
-                        স্বাগতম{user?.name ? `, ${user.name.split(' ')[0]}` : ''}! 👋
-                    </h1>
-                    <p className="text-gray-500 text-sm mt-1">আপনার ড্যাশবোর্ড থেকে সব কার্যক্রম পরিচালনা করুন</p>
+                {/* ── Welcome + Stats banner ── */}
+                <div className="mb-8 bg-primary rounded-2xl px-6 py-7 sm:py-8 relative overflow-hidden">
+                    {/* Decorative glow */}
+                    <div className="absolute top-0 right-0 w-72 h-72 bg-secondary/25 rounded-full translate-x-1/3 -translate-y-1/3 blur-3xl pointer-events-none" />
+
+                    <div className="relative z-10">
+                        <h1 className="text-2xl font-black text-white">
+                            স্বাগতম{user?.name ? `, ${user.name.split(' ')[0]}` : ''}!
+                        </h1>
+                        <p className="text-white/70 text-sm mt-1 mb-6">আপনার ড্যাশবোর্ড থেকে সব কার্যক্রম পরিচালনা করুন</p>
+
+                        {/* ── Stats ── */}
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div className="bg-white/10 backdrop-blur-sm rounded-2xl border border-white/10 p-4 flex items-center gap-3">
+                                <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 bg-white/15 text-white">
+                                    <FileText size={20} />
+                                </div>
+                                <div>
+                                    <p className="text-xl font-black text-white">{stats?.totalReports != null ? formatBnNumber(stats.totalReports) : '—'}</p>
+                                    <p className="text-[11px] text-white/60 leading-tight">আমার রিপোর্ট</p>
+                                </div>
+                            </div>
+
+                            <div className="bg-white/10 backdrop-blur-sm rounded-2xl border border-white/10 p-4 flex items-center gap-3">
+                                <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 bg-white/15 text-white">
+                                    <Bell size={20} />
+                                </div>
+                                <div>
+                                    <p className="text-xl font-black text-white">{stats?.activeAlerts != null ? formatBnNumber(stats.activeAlerts) : '—'}</p>
+                                    <p className="text-[11px] text-white/60 leading-tight">সক্রিয় আলার্ট</p>
+                                </div>
+                            </div>
+
+                            <div className="bg-white/10 backdrop-blur-sm rounded-2xl border border-white/10 p-4 flex items-center gap-3">
+                                <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 bg-white/15 text-white">
+                                    <Users size={20} />
+                                </div>
+                                <div>
+                                    <p className="text-xl font-black text-white">{stats?.successCount != null ? formatBnNumber(stats.successCount) : '—'}</p>
+                                    <p className="text-[11px] text-white/60 leading-tight">সফল পুনর্মিলন</p>
+                                </div>
+                            </div>
+
+                            <button
+                                type="button"
+                                onClick={openAiMatchList}
+                                className="bg-white/10 backdrop-blur-sm rounded-2xl border border-white/10 p-4 flex items-center gap-3 text-left transition-colors hover:bg-white/15"
+                            >
+                                <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 bg-white/15 text-white">
+                                    <Zap size={20} />
+                                </div>
+                                <div>
+                                    <p className="text-xl font-black text-white">
+                                        {formatBnNumber(aiMatchReports.length)}
+                                    </p>
+                                    <p className="text-[11px] text-white/60 leading-tight">AI ম্যাচ পরীক্ষা</p>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 {/* ── AI Match Alert Banner (only shown if a match exists) ── */}
@@ -205,55 +259,6 @@ export default function UserDashboardPage() {
                 {/* {stats?.hasMatch && ( */}
                 {/*   <div className="bg-gradient-to-r from-purple-600 to-purple-500 rounded-2xl p-4 mb-6 ..."> ... </div> */}
                 {/* )} */}
-
-                {/* ── Stats ── */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-3">
-                        <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 bg-secondary/10 text-secondary">
-                            <FileText size={20} />
-                        </div>
-                        <div>
-                            <p className="text-xl font-black text-gray-800">{stats?.totalReports != null ? formatBnNumber(stats.totalReports) : '—'}</p>
-                            <p className="text-[11px] text-gray-400 leading-tight">আমার রিপোর্ট</p>
-                        </div>
-                    </div>
-
-                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-3">
-                        <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 bg-primary/10 text-primary">
-                            <Bell size={20} />
-                        </div>
-                        <div>
-                            <p className="text-xl font-black text-gray-800">{stats?.activeAlerts != null ? formatBnNumber(stats.activeAlerts) : '—'}</p>
-                            <p className="text-[11px] text-gray-400 leading-tight">সক্রিয় আলার্ট</p>
-                        </div>
-                    </div>
-
-                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-3">
-                        <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 bg-teal-100 text-teal-600">
-                            <Users size={20} />
-                        </div>
-                        <div>
-                            <p className="text-xl font-black text-gray-800">{stats?.successCount != null ? formatBnNumber(stats.successCount) : '—'}</p>
-                            <p className="text-[11px] text-gray-400 leading-tight">সফল পুনর্মিলন</p>
-                        </div>
-                    </div>
-
-                    <button
-                        type="button"
-                        onClick={openAiMatchList}
-                        className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-3 text-left transition-colors hover:bg-purple-50/50 hover:border-purple-200"
-                    >
-                        <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 bg-purple-100 text-purple-600">
-                            <Zap size={20} />
-                        </div>
-                        <div>
-                            <p className="text-xl font-black text-gray-800">
-                                {formatBnNumber(aiMatchReports.length)}
-                            </p>
-                            <p className="text-[11px] text-gray-400 leading-tight">AI ম্যাচ পরীক্ষা</p>
-                        </div>
-                    </button>
-                </div>
 
                 {/* ── Main Grid ── */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -334,7 +339,7 @@ export default function UserDashboardPage() {
                                 { to: '/search', label: 'তালিকায় অনুসন্ধান', desc: 'নিখোঁজ তালিকা দেখুন', icon: Search, bg: 'bg-primary/5 border-primary/20', text: 'text-primary' },
                                 { to: '/alerts', label: 'আলার্ট সাবস্ক্রাইব', desc: 'এলাকা-ভিত্তিক আলার্ট', icon: Bell, bg: 'bg-yellow-50 border-yellow-200', text: 'text-yellow-600' },
                                 { to: '/ai-match', label: 'AI ম্যাচ দেখুন', desc: 'মুখ শনাক্তকরণ ফলাফল', icon: Zap, bg: 'bg-purple-50 border-purple-200', text: 'text-purple-600' },
-                                { to: '/profile', label: 'প্রোফাইল সম্পাদনা', desc: 'তথ্য আপডেট করুন', icon: UserCircle2, bg: 'bg-gray-50 border-gray-200', text: 'text-gray-600' },
+                                { to: '/profile', label: 'প্রোফাইল সম্পাদনা', desc: 'তথ্য আপডেট করুন', icon: UserCircle2, bg: 'bg-primary/5 border-primary/20', text: 'text-primary' },
                             ].map(a => (
                                 <Link key={a.to} to={a.to} className={`flex items-start gap-3 border rounded-2xl p-4 hover:shadow-sm transition-all ${a.bg}`}>
                                     <a.icon size={18} className={`mt-0.5 flex-shrink-0 ${a.text}`} />
@@ -394,11 +399,11 @@ export default function UserDashboardPage() {
                                     <span>{user?.district || '—'}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <span className="text-gray-300 text-[11px]">☎</span>
+                                    <Phone size={13} className="text-gray-300 flex-shrink-0" />
                                     <span>{user?.phone || '—'}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <span className="text-gray-300 text-[11px]">📅</span>
+                                    <Calendar size={13} className="text-gray-300 flex-shrink-0" />
                                     <span>যোগদান: {formatDateBN(user?.created_at)}</span>
                                 </div>
                             </div>
@@ -414,8 +419,8 @@ export default function UserDashboardPage() {
                                 <p className="text-sm font-bold text-secondary">জরুরি সহায়তা</p>
                             </div>
                             <p className="text-xs text-gray-500 mb-3">পুলিশ নিয়ন্ত্রণ কক্ষ বা জরুরি সেবা</p>
-                            <a href="tel:999" className="text-2xl font-black text-secondary hover:scale-105 transition-transform inline-flex">
-                                📞 999
+                            <a href="tel:999" className="text-2xl font-black text-secondary hover:scale-105 transition-transform inline-flex items-center gap-2">
+                                <Phone size={20} className="fill-secondary" /> 999
                             </a>
                         </div>
 
