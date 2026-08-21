@@ -20,7 +20,9 @@ class VerificationCode extends Model
      */
     protected $fillable = [
         'email',
+        'purpose',
         'code',
+        'payload',
         'expires_at',
         'verified',
     ];
@@ -31,6 +33,7 @@ class VerificationCode extends Model
      * @var array<string, string>
      */
     protected $casts = [
+        'payload' => 'array',
         'expires_at' => 'datetime',
         'verified' => 'boolean',
     ];

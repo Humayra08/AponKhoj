@@ -155,6 +155,7 @@ export default function SearchPage() {
     const [filters, setFilters] = useState(DEFAULT_FILTERS);
     const [draftSearch, setDraftSearch] = useState(''); // controlled input, debounced into filters.search
     const [sidebarOpen, setSidebarOpen] = useState(true);
+    const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
 
     const [reports, setReports] = useState([]);
     const [total, setTotal] = useState(0);
@@ -237,8 +238,8 @@ export default function SearchPage() {
         <div className="bg-background min-h-screen">
             <div className="max-w-7xl mx-auto px-4 py-6 flex gap-6">
 
-                {/* ── Left Sidebar Filter ── */}
-                <aside className={`flex-shrink-0 transition-all duration-300 ease-in-out overflow-hidden ${sidebarOpen ? 'w-56' : 'w-10'}`}>
+                {/* ── Left Sidebar Filter (desktop only) ── */}
+                <aside className={`hidden lg:block flex-shrink-0 transition-all duration-300 ease-in-out overflow-hidden ${sidebarOpen ? 'w-56' : 'w-10'}`}>
                     <div className="relative">
 
                         {/* Toggle Button */}
@@ -389,6 +390,138 @@ export default function SearchPage() {
                     </div>
                 </aside>
 
+                {/* ── Mobile Filter Drawer ── */}
+                {mobileFilterOpen && (
+                    <div className="lg:hidden fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center">
+                        <div className="absolute inset-0 bg-black/40" onClick={() => setMobileFilterOpen(false)} />
+                        <div className="relative w-full sm:max-w-sm sm:rounded-2xl bg-white rounded-t-2xl max-h-[85vh] overflow-y-auto p-5">
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-1.5 font-black text-gray-800">
+                                    <SlidersHorizontal size={16} className="text-primary" />
+                                    ফিল্টার
+                                    {filterBadgeCount > 0 && (
+                                        <span className="ml-1 px-1.5 py-0.5 bg-secondary text-white text-[10px] font-bold rounded-full">
+                                            {filterBadgeCount}
+                                        </span>
+                                    )}
+                                </div>
+                                <button onClick={() => setMobileFilterOpen(false)} className="text-gray-400 hover:text-gray-600">
+                                    <X size={18} />
+                                </button>
+                            </div>
+
+                            <div className="space-y-5">
+                                {/* Name Search */}
+                                <div>
+                                    <p className="text-xs font-bold text-gray-600 mb-2">নাম খুঁজুন</p>
+                                    <div className="relative">
+                                        <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                                        <input
+                                            type="text"
+                                            value={draftSearch}
+                                            onChange={e => handleSearchInput(e.target.value)}
+                                            placeholder="নিখোঁজ ব্যক্তির নাম..."
+                                            className="w-full pl-7 pr-7 py-2 border border-gray-200 rounded-xl text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary bg-white"
+                                        />
+                                        {draftSearch && (
+                                            <button
+                                                onClick={() => { setDraftSearch(''); setFilter('search', ''); }}
+                                                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                            >
+                                                <X size={12} />
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* District Dropdown */}
+                                <div>
+                                    <p className="text-xs font-bold text-gray-600 mb-2">জেলা</p>
+                                    <select
+                                        value={filters.district}
+                                        onChange={e => setFilter('district', e.target.value)}
+                                        className="w-full border border-gray-200 rounded-xl p-2 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white"
+                                    >
+                                        <option value="all">সকল জেলা</option>
+                                        {DISTRICTS.map(d => <option key={d} value={d}>{d}</option>)}
+                                    </select>
+                                </div>
+
+                                {/* Gender Filter */}
+                                <div>
+                                    <p className="text-xs font-bold text-gray-600 mb-2">লিঙ্গ</p>
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {GENDER_OPTIONS.map(g => (
+                                            <button
+                                                key={g.value}
+                                                onClick={() => setFilter('gender', g.value)}
+                                                className={`text-[11px] px-3 py-1 rounded-full border transition-all ${
+                                                    filters.gender === g.value
+                                                        ? 'bg-primary text-white border-primary'
+                                                        : 'border-gray-200 text-gray-600 hover:border-primary hover:text-primary'
+                                                }`}
+                                            >
+                                                {g.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Age Range */}
+                                <div>
+                                    <div className="flex items-center justify-between mb-1">
+                                        <p className="text-xs font-bold text-gray-600">বয়সসীমা</p>
+                                        <span className="text-[10px] text-gray-500 font-medium bg-gray-100 px-2 py-0.5 rounded-full">
+                                            {filters.age_min}–{filters.age_max} বছর
+                                        </span>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <div>
+                                            <div className="flex justify-between text-[10px] text-gray-400 mb-1">
+                                                <span>সর্বনিম্ন</span><span>{filters.age_min} বছর</span>
+                                            </div>
+                                            <input
+                                                type="range" min="0" max="99" step="1"
+                                                value={filters.age_min}
+                                                onChange={e => {
+                                                    const val = Math.min(+e.target.value, filters.age_max - 1);
+                                                    setFilter('age_min', val);
+                                                }}
+                                                className="w-full h-1.5 bg-gray-200 rounded-full appearance-none cursor-pointer accent-primary"
+                                            />
+                                        </div>
+                                        <div>
+                                            <div className="flex justify-between text-[10px] text-gray-400 mb-1">
+                                                <span>সর্বোচ্চ</span><span>{filters.age_max} বছর</span>
+                                            </div>
+                                            <input
+                                                type="range" min="1" max="100" step="1"
+                                                value={filters.age_max}
+                                                onChange={e => {
+                                                    const val = Math.max(+e.target.value, filters.age_min + 1);
+                                                    setFilter('age_max', val);
+                                                }}
+                                                className="w-full h-1.5 bg-gray-200 rounded-full appearance-none cursor-pointer accent-secondary"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="flex gap-2 pt-2">
+                                    {filterBadgeCount > 0 && (
+                                        <button onClick={clearAll} className="flex-1 text-sm text-secondary border border-secondary/30 rounded-xl py-2.5 font-semibold">
+                                            সব মুছুন
+                                        </button>
+                                    )}
+                                    <button onClick={() => setMobileFilterOpen(false)} className="flex-1 text-sm bg-primary text-white rounded-xl py-2.5 font-semibold">
+                                        প্রয়োগ করুন
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* ── Main Content ── */}
                 <main className="flex-1 min-w-0">
 
@@ -414,7 +547,7 @@ export default function SearchPage() {
                     </div>
 
                     {/* Title + Sort */}
-                    <div className="flex items-start justify-between gap-4 mb-4">
+                    <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
                         <div>
                             <h1 className="text-xl font-black text-gray-800">অনুমোদিত নিখোঁজ রিপোর্ট</h1>
                             <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1">
@@ -424,15 +557,27 @@ export default function SearchPage() {
                                 }
                             </p>
                         </div>
-                        <div className="flex items-center gap-2 flex-shrink-0">
+                        <div className="flex items-center gap-2 w-full sm:w-auto sm:flex-shrink-0">
                             <span className="text-xs text-gray-400 whitespace-nowrap hidden sm:block">সর্ট:</span>
                             <select
                                 value={filters.sort}
                                 onChange={e => setFilter('sort', e.target.value)}
-                                className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none bg-white text-gray-700"
+                                className="flex-1 sm:flex-none min-w-0 text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none bg-white text-gray-700"
                             >
                                 {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                             </select>
+                            <button
+                                onClick={() => setMobileFilterOpen(true)}
+                                className="lg:hidden relative flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-lg bg-white border border-gray-200 shadow-sm text-primary"
+                                title="ফিল্টার"
+                            >
+                                <SlidersHorizontal size={15} />
+                                {filterBadgeCount > 0 && (
+                                    <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-secondary text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                                        {filterBadgeCount}
+                                    </span>
+                                )}
+                            </button>
                         </div>
                     </div>
 
@@ -474,22 +619,16 @@ export default function SearchPage() {
 
                     {/* Report Grid */}
                     {loading ? (
-                        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             {Array.from({ length: PER_PAGE }).map((_, i) => <CardSkeleton key={i} />)}
                         </div>
                     ) : reports.length > 0 ? (
-                        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             {reports.map(r => <Card key={r.id} r={r} />)}
                         </div>
                     ) : (
                         <div className="text-center py-20">
-                            <div className="text-4xl mb-3">🔍</div>
                             <p className="text-gray-500 font-medium">কোনো রিপোর্ট পাওয়া যায়নি</p>
-                            {filterBadgeCount > 0 && (
-                                <button onClick={clearAll} className="mt-3 text-sm text-primary hover:underline">
-                                    ফিল্টার সাফ করুন
-                                </button>
-                            )}
                         </div>
                     )}
 

@@ -481,7 +481,7 @@ class MissingPersonController extends Controller
                 ->where('phone', '!=', '')
                 ->pluck('phone')
                 ->map(fn($p) => $this->normalizePhone($p))
-                ->filter()                               // remove nulls from normalization failures
+                ->filter()                              
                 ->unique()
                 ->values()
                 ->toArray();

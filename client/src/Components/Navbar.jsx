@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import {
-    Menu, X, Search, ChevronDown, User, Settings, FileText,
+    Menu, X, ChevronDown, User, Settings, FileText,
     LogOut, Bell, LayoutDashboard, Shield, Heart
 } from 'lucide-react';
 import { useAuth } from '../helpers/AuthContext';
@@ -77,10 +77,7 @@ const Navbar = () => {
 
                     {/* ── Logo ── */}
                     <Link to="/" className="flex items-center gap-2 font-bold text-gray-800 shrink-0">
-                        <div className="w-8 h-8 bg-primary/10 rounded-md flex items-center justify-center shrink-0">
-                            <Search size={18} className="text-primary" strokeWidth={2.5} />
-                        </div>
-                        <span className="text-base font-extrabold text-gray-800 whitespace-nowrap">আপনখোঁজ</span>
+                        <img src="/logo.png" alt="আপনখোঁজ" className="h-14 w-auto shrink-0" />
                     </Link>
 
                     {/* ── Desktop Nav Links ── */}

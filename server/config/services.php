@@ -34,7 +34,7 @@ return [
    'giosms' => [
         'base_url' => env('GIOSMS_BASE_URL', 'https://api.giosms.com/api/v1'),
         'token'    => env('GIOSMS_TOKEN'),
-       'sender_id' => env('GIOSMS_SENDER_ID', 'nonmasking'),
+       'sender_id' => env('GIOSMS_SENDER_ID', ''),
     ],
    
 
