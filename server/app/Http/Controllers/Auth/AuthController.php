@@ -7,16 +7,12 @@ use App\Models\User;
 use App\Services\VerificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
 
 class AuthController extends Controller
 {
-    private const PENDING_REG_PREFIX = 'pending_registration:';
-    private const PENDING_REG_TTL_SECONDS = 900;
-
     public function __construct()
     {
         $this->middleware('auth:api', ['except' => ['login', 'register', 'verifyEmail', 'resendCode', 'redirectToGoogle', 'handleGoogleCallback']]);
@@ -141,20 +137,15 @@ class AuthController extends Controller
             ], 403);
         }
 
-        $pendingKey = $this->pendingRegistrationKey($request->email);
-
-        // Store registration data temporarily in Redis (TTL: 15 minutes)
-        Redis::setex($pendingKey, self::PENDING_REG_TTL_SECONDS, json_encode([
+        // Store pending registration data alongside the verification code (TTL: 15 minutes)
+        $verificationService = new VerificationService();
+        $verificationService->createAndSendCode($request->email, VerificationService::PURPOSE_REGISTRATION, [
             'name'     => $request->name,
             'email'    => $request->email,
             'password' => Hash::make($request->password),
             'phone'    => $request->phone,
             'district' => $request->district,
-        ]));
-
-        // Send verification code
-        $verificationService = new VerificationService();
-        $verificationService->createAndSendCode($request->email);
+        ]);
 
         return response()->json([
             'message'              => 'Registration initiated. Please check your email for a verification code.',
@@ -174,26 +165,23 @@ class AuthController extends Controller
             return response()->json($validator->errors(), 422);
         }
 
-        $pendingKey = $this->pendingRegistrationKey($request->email);
-        $pendingData = Redis::get($pendingKey);
+        $verificationService = new VerificationService();
 
-        if (!$pendingData) {
+        if (!$verificationService->hasPending($request->email, VerificationService::PURPOSE_REGISTRATION)) {
             return response()->json([
                 'message' => 'Registration session expired or not found. Please register again.',
                 'error'   => 'session_expired',
             ], 400);
         }
 
-        $verificationService = new VerificationService();
+        $data = $verificationService->verifyAndConsume($request->email, $request->code, VerificationService::PURPOSE_REGISTRATION);
 
-        if (!$verificationService->verifyCode($request->email, $request->code)) {
+        if ($data === null) {
             return response()->json([
                 'message' => 'Invalid or expired verification code.',
                 'error'   => 'invalid_code',
             ], 400);
         }
-
-        $data = json_decode($pendingData, true);
 
         // Commit to database
         $user = User::create([
@@ -204,9 +192,6 @@ class AuthController extends Controller
             'district'          => $data['district'],
             'email_verified_at' => now(),
         ]);
-
-        // Clear Redis
-        Redis::del($pendingKey);
 
         // Log the user in
         $token = auth()->login($user);
@@ -237,17 +222,17 @@ class AuthController extends Controller
             return response()->json(['message' => 'Email already verified.'], 400);
         }
 
-        // Check Redis for pending registration
-        $pendingKey = $this->pendingRegistrationKey($request->email);
-        if (!Redis::exists($pendingKey)) {
+        $verificationService = new VerificationService();
+
+        // Check for a still-pending registration (payload preserved on resend)
+        if (!$verificationService->hasPending($request->email, VerificationService::PURPOSE_REGISTRATION)) {
             return response()->json([
                 'message' => 'No pending registration found for this email. Please register again.',
                 'error'   => 'no_pending_registration',
             ], 404);
         }
 
-        $verificationService = new VerificationService();
-        $verificationService->createAndSendCode($request->email);
+        $verificationService->createAndSendCode($request->email, VerificationService::PURPOSE_REGISTRATION);
 
         return response()->json([
             'message' => 'Verification code resent successfully.',
@@ -278,11 +263,6 @@ class AuthController extends Controller
             'expires_in'   => auth()->factory()->getTTL() * 60,
             'user'         => $this->serializeUser(auth()->user()),
         ]);
-    }
-
-    private function pendingRegistrationKey($email)
-    {
-        return self::PENDING_REG_PREFIX . strtolower(trim($email));
     }
 
     private function serializeUser(User $user)

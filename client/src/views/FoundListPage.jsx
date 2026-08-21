@@ -426,9 +426,7 @@ export default function FoundListPage() {
                         </div>
                     ) : filtered.length === 0 ? (
                         <div className="text-center py-20">
-                            <div className="text-4xl mb-3">🔍</div>
                             <p className="text-gray-500 font-medium">কোনো রেকর্ড পাওয়া যায়নি</p>
-                            <button onClick={clearAll} className="mt-3 text-sm text-primary hover:underline">ফিল্টার সাফ করুন</button>
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">

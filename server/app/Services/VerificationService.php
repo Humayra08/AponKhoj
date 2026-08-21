@@ -3,25 +3,25 @@
 namespace App\Services;
 
 use App\Models\User;
+use App\Models\VerificationCode;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Redis;
 
 class VerificationService
 {
-    /**
-     * Redis key prefix for OTP storage.
-     *
-     * @var string
-     */
-    private const OTP_KEY_PREFIX = 'verification_code:';
-
     /**
      * OTP validity in seconds.
      *
      * @var int
      */
     private const OTP_TTL_SECONDS = 900;
+
+    /**
+     * Default purpose used for registration verification codes.
+     *
+     * @var string
+     */
+    public const PURPOSE_REGISTRATION = 'registration';
 
     /**
      * Generate a random 4-digit verification code.
@@ -34,33 +34,32 @@ class VerificationService
     }
 
     /**
-     * Create and send a verification code to the user's email.
+     * Create and send a verification code to the user's email, optionally
+     * attaching a payload (e.g. pending registration data) to the same row
+     * so no separate temporary store is needed.
      *
      * @param string $email
+     * @param string $purpose
+     * @param array|null $payload
      * @return array<string, mixed>
      */
-    public function createAndSendCode($email)
+    public function createAndSendCode($email, $purpose = self::PURPOSE_REGISTRATION, ?array $payload = null)
     {
-        // Generate new code
         $code = $this->generateCode();
+        $expiresAt = now()->addSeconds(self::OTP_TTL_SECONDS);
 
-        // Store OTP in Redis with expiration.
-        $payload = [
-            'email' => $email,
-            'code' => $code,
-            'expires_at' => now()->addSeconds(self::OTP_TTL_SECONDS)->toIso8601String(),
-        ];
+        $attributes = ['email' => $this->normalizeEmail($email), 'purpose' => $purpose];
+        $values = ['code' => $code, 'expires_at' => $expiresAt, 'verified' => false];
 
-        Redis::setex(
-            $this->otpKey($email),
-            self::OTP_TTL_SECONDS,
-            json_encode($payload)
-        );
+        if ($payload !== null) {
+            $values['payload'] = $payload;
+        }
 
-        // Send email with code
+        VerificationCode::updateOrCreate($attributes, $values);
+
         $this->sendVerificationEmail($email, $code);
 
-        return $payload;
+        return ['email' => $email, 'code' => $code, 'expires_at' => $expiresAt->toIso8601String()];
     }
 
     /**
@@ -76,10 +75,10 @@ class VerificationService
             // Get user name for personalized email
             $user = User::where('email', $email)->first();
             $userName = $user ? $user->name : 'ব্যবহারকারী';
-            
+
             // Log the code for testing purposes (in case mail fails)
             Log::info("Verification code for {$email}: {$code}");
-            
+
             // Send email with verification code
             Mail::send('emails.verification', [
                 'code' => $code,
@@ -88,7 +87,7 @@ class VerificationService
                 $message->to($email)
                     ->subject('AponKhoj - আপনার ইমেইল যাচাইকরণ কোড');
             });
-            
+
             Log::info("Verification email sent successfully to {$email}");
         } catch (\Exception $e) {
             // Log error but don't throw exception - code is still logged above
@@ -98,70 +97,56 @@ class VerificationService
     }
 
     /**
-     * Verify a code for a given email.
+     * Check whether a still-valid (unexpired) pending code/payload exists for this email+purpose.
+     *
+     * @param string $email
+     * @param string $purpose
+     * @return bool
+     */
+    public function hasPending($email, $purpose = self::PURPOSE_REGISTRATION)
+    {
+        return VerificationCode::where('email', $this->normalizeEmail($email))
+            ->where('purpose', $purpose)
+            ->where('expires_at', '>', now())
+            ->exists();
+    }
+
+    /**
+     * Verify a code for a given email+purpose. On success, consumes (deletes)
+     * the row and returns its stored payload (or an empty array if none was
+     * attached). Returns null if the code is invalid, expired, or not found.
      *
      * @param string $email
      * @param string $code
-     * @return bool
+     * @param string $purpose
+     * @return array|null
      */
-    public function verifyCode($email, $code)
+    public function verifyAndConsume($email, $code, $purpose = self::PURPOSE_REGISTRATION)
     {
-        $stored = Redis::get($this->otpKey($email));
+        $record = VerificationCode::where('email', $this->normalizeEmail($email))
+            ->where('purpose', $purpose)
+            ->where('code', $code)
+            ->where('expires_at', '>', now())
+            ->first();
 
-        if (!$stored) {
-            return false;
-        }
-
-        $data = json_decode($stored, true);
-
-        if (!is_array($data) || !isset($data['code']) || $data['code'] !== $code) {
-            return false;
-        }
-
-        // Enforce one-time usage after successful verification.
-        Redis::del($this->otpKey($email));
-
-        return true;
-    }
-
-    /**
-     * Check if email has a valid unverified code.
-     *
-     * @param string $email
-     * @return bool
-     */
-    public function hasValidCode($email)
-    {
-        return Redis::exists($this->otpKey($email)) > 0;
-    }
-
-    /**
-     * Get the latest code for an email (for testing purposes).
-     *
-     * @param string $email
-     * @return string|null
-     */
-    public function getLatestCode($email)
-    {
-        $stored = Redis::get($this->otpKey($email));
-
-        if (!$stored) {
+        if (!$record) {
             return null;
         }
 
-        $data = json_decode($stored, true);
+        $payload = $record->payload ?? [];
+        $record->delete();
 
-        return is_array($data) && isset($data['code']) ? $data['code'] : null;
+        return $payload;
     }
 
     /**
-     * Build a case-insensitive Redis key for an email.
+     * Normalize an email for case-insensitive lookups.
      *
      * @param string $email
      * @return string
      */
-    private function otpKey($email)
+    private function normalizeEmail($email)
     {
-        return self::OTP_KEY_PREFIX . strtolower(trim($email));
+        return strtolower(trim($email));
     }
 }

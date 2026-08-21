@@ -22,3 +22,10 @@ body {
   color: #1f2937;
   font-family: 'Noto Sans Bengali', sans-serif;
 }
+
+/* Hide browser-native password reveal/clear icons (Edge/IE) so they don't
+   double up with our custom show/hide eye button inside password fields. */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
+}

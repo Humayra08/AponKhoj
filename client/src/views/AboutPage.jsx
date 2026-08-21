@@ -1,13 +1,6 @@
 import { Shield, Users, Zap, Heart, CheckCircle, MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-const TEAM = [
-    { name: 'হুমায়রা বিনতে কাজল' },
-    { name: 'অস্মিতা গুহ ঠাকুরতা' },
-    { name: 'মৌফি আল দৌশারি' },
-    { name: 'জামিলা মোহাম্মদ' },
-];
-
 const FEATURES = [
     { icon: Zap, title: 'AI-চালিত মিলকরণ', desc: 'উন্নত ফেস রিকগনিশন প্রযুক্তি ব্যবহার করে নিখোঁজ ও উদ্ধার হওয়া ব্যক্তিদের মধ্যে মিল খোঁজা হয়।', color: 'text-secondary bg-secondary/10' },
     { icon: Shield, title: 'নির্ভরযোগ্য যাচাইকরণ', desc: 'প্রতিটি রিপোর্ট পুলিশ ও এনজিও অংশীদারদের মাধ্যমে যাচাই করা হয়।', color: 'text-primary bg-primary/10' },
@@ -78,23 +71,6 @@ const AboutPage = () => (
                 </div>
             </div>
 
-            {/* Team */}
-            <div>
-                <h2 className="text-3xl font-black text-gray-800 text-center mb-2">আমাদের দল</h2>
-        
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                    {TEAM.map(m => (
-                        <div key={m.name} className="text-center">
-                            <div className="w-20 h-20 rounded-full mx-auto mb-3 bg-gray-200 flex items-center justify-center shadow-sm">
-                                <svg viewBox="0 0 24 24" className="w-11 h-11 text-gray-400" fill="currentColor">
-                                    <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
-                                </svg>
-                            </div>
-                            <p className="font-bold text-gray-800 text-sm">{m.name}</p>
-                        </div>
-                    ))}
-                </div>
-            </div>
         </div>
     </div>
 );

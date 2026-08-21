@@ -628,13 +628,7 @@ export default function SearchPage() {
                         </div>
                     ) : (
                         <div className="text-center py-20">
-                            <div className="text-4xl mb-3">🔍</div>
                             <p className="text-gray-500 font-medium">কোনো রিপোর্ট পাওয়া যায়নি</p>
-                            {filterBadgeCount > 0 && (
-                                <button onClick={clearAll} className="mt-3 text-sm text-primary hover:underline">
-                                    ফিল্টার সাফ করুন
-                                </button>
-                            )}
                         </div>
                     )}
 
