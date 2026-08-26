@@ -1,9 +1,5 @@
-# Use an official PHP image with Apache
 FROM php:8.2-apache
 
-# Non-secret build-time default, used only for the client's Vite build below.
-# All real runtime config (DB, JWT, mail, Redis, chatbot) lives in server/.env,
-# which is bind-mounted into the container at runtime — never baked into the image.
 ARG APP_URL=http://localhost
 
 # Install system dependencies
@@ -14,6 +10,7 @@ RUN apt-get update && apt-get install -y \
     libpng-dev \
     libonig-dev \
     libxml2-dev \
+    libpq-dev \
     zip \
     unzip
 
@@ -27,11 +24,8 @@ RUN a2enmod rewrite
 # Clear cache
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Install PHP extensions
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
-
-# Install Redis PHP extension via PECL
-RUN pecl install redis && docker-php-ext-enable redis
+# Install PHP extensions (pdo_pgsql for the Supabase/pgvector chatbot connection)
+RUN docker-php-ext-install pdo_mysql pdo_pgsql mbstring exif pcntl bcmath gd
 
 # Set Apache document root to Laravel public directory
 ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
@@ -48,13 +42,8 @@ COPY client/ /var/www/html/client
 # Set working directory
 WORKDIR /var/www/html
 
-# Install Laravel dependencies (including predis)
-RUN composer require predis/predis && composer install
-
-# No .env is baked into the image — server/.env (bind-mounted at runtime,
-# gitignored, never committed) is the only source of real config/secrets.
-# If server/.env doesn't exist yet, copy server/.env.example to create it
-# before first run.
+# Install Laravel dependencies
+RUN composer install
 
 # Set permissions for Laravel storage and cache
 RUN chown -R www-data:www-data /var/www/html && \

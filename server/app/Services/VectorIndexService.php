@@ -2,178 +2,131 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Redis;
 
+/**
+ * Vector store client for the chatbot's semantic search — backed by Supabase
+ * Postgres + pgvector (connection 'supabase' in config/database.php), kept
+ * entirely separate from the app's main MySQL database. Callers pass
+ * pre-computed embeddings (from EmbeddingClientService), so this class never
+ * calls the embedding model itself.
+ *
+ * All rows live in one `chat_vectors` table, distinguished by `collection`
+ * ('kb', 'reports_text', 'faces') — see the migration that creates it.
+ */
 class VectorIndexService
 {
-    private const TEXT_DIM = 384; // sentence-transformers/all-MiniLM-L6-v2
-    private const FACE_DIM = 512; // insightface/ArcFace (Phase 2)
-
-    private function connection()
-    {
-        return Redis::connection('vector');
-    }
-
-    /**
-     * Pack a float array into the binary blob format RediSearch expects for a VECTOR field.
-     */
-    private function packVector(array $vector): string
-    {
-        return pack('g*', ...$vector);
-    }
-
-    private function ensureIndex(string $indexName, string $prefix, int $dim): void
-    {
-        try {
-            $this->connection()->executeRaw([
-                'FT.CREATE', $indexName,
-                'ON', 'HASH',
-                'PREFIX', '1', $prefix,
-                'SCHEMA',
-                'text', 'TEXT',
-                'ref_id', 'TEXT',
-                'ref_type', 'TAG',
-                'embedding', 'VECTOR', 'HNSW', '6',
-                'TYPE', 'FLOAT32',
-                'DIM', (string) $dim,
-                'DISTANCE_METRIC', 'COSINE',
-            ]);
-        } catch (\Exception $e) {
-            // "Index already exists" is expected on every call after the first — ignore it.
-            if (!str_contains($e->getMessage(), 'Index already exists')) {
-                Log::warning("VectorIndexService: FT.CREATE {$indexName} failed: " . $e->getMessage());
-            }
-        }
-    }
-
-    public function ensureKbIndex(): void
-    {
-        $this->ensureIndex('idx:kb', 'kb:', self::TEXT_DIM);
-    }
-
-    public function ensureReportsTextIndex(): void
-    {
-        $this->ensureIndex('idx:reports_text', 'report_text:', self::TEXT_DIM);
-    }
-
-    public function ensureFacesIndex(): void
-    {
-        $this->ensureIndex('idx:faces', 'face:', self::FACE_DIM);
-    }
-
     public function upsertKbChunk(int $chunkId, string $text, array $embedding): void
     {
-        $this->ensureKbIndex();
-        $this->connection()->hmset("kb:{$chunkId}", [
-            'text' => $text,
-            'ref_id' => (string) $chunkId,
-            'ref_type' => 'kb',
-            'embedding' => $this->packVector($embedding),
-        ]);
+        $this->upsert('kb', "kb:{$chunkId}", $text, $embedding, (string) $chunkId, 'kb');
     }
 
     public function upsertReportText(string $reportType, int $reportId, string $text, array $embedding): void
     {
-        $this->ensureReportsTextIndex();
-        $key = "report_text:{$reportType}:{$reportId}";
-        $this->connection()->hmset($key, [
-            'text' => $text,
-            'ref_id' => (string) $reportId,
-            'ref_type' => $reportType,
-            'embedding' => $this->packVector($embedding),
-        ]);
+        $this->upsert('reports_text', "{$reportType}:{$reportId}", $text, $embedding, (string) $reportId, $reportType);
     }
 
     public function upsertFaceEmbedding(int $missingReportId, array $embedding): void
     {
-        $this->ensureFacesIndex();
-        $key = "face:missing:{$missingReportId}";
-        $this->connection()->hmset($key, [
-            'ref_id' => (string) $missingReportId,
-            'ref_type' => 'missing',
-            'embedding' => $this->packVector($embedding),
-        ]);
+        $this->upsert('faces', "missing:{$missingReportId}", '', $embedding, (string) $missingReportId, 'missing');
     }
 
     public function deleteReportText(string $reportType, int $reportId): void
     {
-        $this->connection()->del("report_text:{$reportType}:{$reportId}");
+        $this->delete('reports_text', "{$reportType}:{$reportId}");
     }
 
     public function deleteFaceEmbedding(int $missingReportId): void
     {
-        $this->connection()->del("face:missing:{$missingReportId}");
+        $this->delete('faces', "missing:{$missingReportId}");
     }
 
     /**
-     * KNN search against idx:kb. Returns [['ref_id' => ..., 'text' => ..., 'score' => float], ...]
+     * KNN search against the kb collection. Returns [['ref_id','ref_type','text','score'], ...]
      */
     public function searchKb(array $queryEmbedding, int $limit = 4): array
     {
-        return $this->knnSearch('idx:kb', $queryEmbedding, $limit);
+        return $this->search('kb', $queryEmbedding, $limit);
     }
 
     /**
-     * KNN search against idx:reports_text. Returns [['ref_id' => ..., 'ref_type' => ..., 'text' => ..., 'score' => float], ...]
+     * KNN search against the reports_text collection.
      */
     public function searchReportsText(array $queryEmbedding, int $limit = 6): array
     {
-        return $this->knnSearch('idx:reports_text', $queryEmbedding, $limit);
+        return $this->search('reports_text', $queryEmbedding, $limit);
     }
 
     /**
-     * KNN search against idx:faces. Returns [['ref_id' => ..., 'score' => float], ...] sorted by similarity.
+     * KNN search against the faces collection (Phase 2).
      */
     public function searchFaces(array $queryEmbedding, int $limit = 5): array
     {
-        return $this->knnSearch('idx:faces', $queryEmbedding, $limit);
+        return $this->search('faces', $queryEmbedding, $limit);
     }
 
-    private function knnSearch(string $indexName, array $queryEmbedding, int $limit): array
+    private function upsert(string $collection, string $refKey, string $text, array $embedding, string $refId, string $refType): void
     {
         try {
-            $blob = $this->packVector($queryEmbedding);
+            $vectorLiteral = $this->toVectorLiteral($embedding);
 
-            $raw = $this->connection()->executeRaw([
-                'FT.SEARCH', $indexName,
-                "*=>[KNN {$limit} @embedding \$vec AS score]",
-                'PARAMS', '2', 'vec', $blob,
-                'SORTBY', 'score',
-                'RETURN', '3', 'ref_id', 'ref_type', 'text',
-                'DIALECT', '2',
-            ]);
-
-            return $this->parseSearchResults($raw);
+            DB::connection('supabase')->statement(
+                'INSERT INTO chat_vectors (collection, ref_key, ref_id, ref_type, text, embedding, updated_at)
+                 VALUES (?, ?, ?, ?, ?, ?::vector, NOW())
+                 ON CONFLICT (collection, ref_key)
+                 DO UPDATE SET ref_id = EXCLUDED.ref_id, ref_type = EXCLUDED.ref_type,
+                               text = EXCLUDED.text, embedding = EXCLUDED.embedding, updated_at = NOW()',
+                [$collection, $refKey, $refId, $refType, $text, $vectorLiteral]
+            );
         } catch (\Exception $e) {
-            Log::warning("VectorIndexService: FT.SEARCH {$indexName} failed: " . $e->getMessage());
+            Log::warning("VectorIndexService: upsert into {$collection} failed: " . $e->getMessage());
+        }
+    }
+
+    private function delete(string $collection, string $refKey): void
+    {
+        try {
+            DB::connection('supabase')->delete(
+                'DELETE FROM chat_vectors WHERE collection = ? AND ref_key = ?',
+                [$collection, $refKey]
+            );
+        } catch (\Exception $e) {
+            Log::warning("VectorIndexService: delete from {$collection} failed: " . $e->getMessage());
+        }
+    }
+
+    private function search(string $collection, array $queryEmbedding, int $limit): array
+    {
+        try {
+            $vectorLiteral = $this->toVectorLiteral($queryEmbedding);
+
+            $rows = DB::connection('supabase')->select(
+                'SELECT ref_id, ref_type, text, embedding <=> ?::vector AS distance
+                 FROM chat_vectors
+                 WHERE collection = ?
+                 ORDER BY embedding <=> ?::vector
+                 LIMIT ?',
+                [$vectorLiteral, $collection, $vectorLiteral, $limit]
+            );
+
+            return array_map(fn ($row) => [
+                'ref_id' => $row->ref_id,
+                'ref_type' => $row->ref_type,
+                'text' => $row->text,
+                'score' => (float) $row->distance,
+            ], $rows);
+        } catch (\Exception $e) {
+            Log::warning("VectorIndexService: search on {$collection} failed: " . $e->getMessage());
             return [];
         }
     }
 
     /**
-     * RediSearch raw reply shape: [total, key1, [field, value, field, value, ...], key2, [...], ...]
+     * pgvector's text input/output format: '[0.1,0.2,0.3]'
      */
-    private function parseSearchResults($raw): array
+    private function toVectorLiteral(array $embedding): string
     {
-        if (!is_array($raw) || count($raw) < 1) {
-            return [];
-        }
-
-        $results = [];
-        $count = count($raw);
-
-        for ($i = 1; $i < $count; $i += 2) {
-            $fields = $raw[$i + 1] ?? [];
-            $row = ['key' => $raw[$i]];
-
-            for ($j = 0; $j < count($fields); $j += 2) {
-                $row[$fields[$j]] = $fields[$j + 1] ?? null;
-            }
-
-            $results[] = $row;
-        }
-
-        return $results;
+        return '[' . implode(',', array_map(fn ($v) => (string) (float) $v, $embedding)) . ']';
     }
 }

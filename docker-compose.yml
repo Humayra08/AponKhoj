@@ -22,22 +22,9 @@ services:
       timeout: 5s
       retries: 5
 
-  # Redis Service
-  redis:
-    image: redis:alpine
-    container_name: aponkhoj_redis
-    restart: unless-stopped
-    ports:
-      - "6379:6379"
-    networks:
-      - aponkhoj_network
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  # AI Embeddings microservice (chatbot: text embeddings now, face embeddings in Phase 2)
+  # AI Embeddings microservice (chatbot: computes text embeddings only —
+  # the actual vector store is Supabase Postgres/pgvector, queried directly
+  # from Laravel; face embeddings land in Phase 2)
   ai-embeddings:
     build:
       context: ./services/ai-embeddings
@@ -66,8 +53,6 @@ services:
       - "80:80"
     depends_on:
       db:
-        condition: service_healthy
-      redis:
         condition: service_healthy
       ai-embeddings:
         condition: service_healthy
@@ -104,5 +89,5 @@ networks:
 volumes:
   db_data:
     driver: local
-  vendor_data:      
+  vendor_data:
     driver: local

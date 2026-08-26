@@ -19,6 +19,9 @@ class Kernel extends ConsoleKernel
 
         // Safety net for the chatbot's real-time report indexing observers.
         $schedule->command('chat:resync-embeddings')->hourly()->withoutOverlapping();
+
+        // Keeps the free-tier Supabase project from auto-pausing after 7 days idle.
+        $schedule->command('chat:supabase-keepalive')->daily();
     }
 
     /**
