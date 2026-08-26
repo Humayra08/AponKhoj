@@ -36,6 +36,14 @@ return [
         'token'    => env('GIOSMS_TOKEN'),
        'sender_id' => env('GIOSMS_SENDER_ID', ''),
     ],
-   
+
+    'ai_embeddings' => [
+        'base_url' => env('AI_EMBEDDINGS_URL', 'http://ai-embeddings:8000'),
+    ],
+
+    'huggingface' => [
+        'api_key' => env('HUGGINGFACE_API_KEY', ''),
+        'chat_model' => env('HUGGINGFACE_CHAT_MODEL', 'meta-llama/Llama-3.3-70B-Instruct'),
+    ],
 
 ];

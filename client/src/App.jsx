@@ -1,6 +1,7 @@
 import { Route, Routes, useLocation } from 'react-router';
 import Navbar from './Components/Navbar';
 import Footer from './Components/Footer';
+import ChatWidget from './Components/ChatWidget';
 import ScrollToTop from './Components/ScrollToTop';
 import HomePage from './views/HomePage';
 import LoginPage from './views/LoginPage';
@@ -78,6 +79,7 @@ function AppShell() {
         </Routes>
       </main>
       {!isAdminRoute && <Footer />}
+      {!isAdminRoute && <ChatWidget />}
       <Toaster
         position="top-center"
         toastOptions={{

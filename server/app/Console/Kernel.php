@@ -16,6 +16,9 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         // $schedule->command('inspire')->hourly();
+
+        // Safety net for the chatbot's real-time report indexing observers.
+        $schedule->command('chat:resync-embeddings')->hourly()->withoutOverlapping();
     }
 
     /**

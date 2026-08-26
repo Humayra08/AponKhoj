@@ -9,6 +9,7 @@ use App\Http\Controllers\MissingPersonController;
 use App\Http\Controllers\FoundPersonController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Admin\SuccessStoryController;
+use App\Http\Controllers\ChatController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -74,6 +75,10 @@ Route::get('found-reports/published/{id}', [FoundPersonController::class, 'getPu
 
 Route::get('success-stories', [SuccessStoryController::class, 'publicIndex']);
 Route::get('success-stories/{id}', [SuccessStoryController::class, 'publicShow']);
+
+// Chatbot routes — optionally authenticated (guest chat works via session_id)
+Route::post('chat/message', [ChatController::class, 'sendMessage'])->middleware('throttle:20,1');
+Route::get('chat/conversations/{id}', [ChatController::class, 'show'])->middleware('throttle:60,1');
 
 // Admin-only API routes
 Route::middleware(['auth:api', 'admin.only'])->group(function () {

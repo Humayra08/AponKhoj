@@ -35,6 +35,7 @@ class FoundReport extends Model
     protected $casts = [
         'found_date' => 'date',
         'approved'   => 'boolean',
+        'embedding_indexed_at' => 'datetime',
     ];
 
     public function user()
