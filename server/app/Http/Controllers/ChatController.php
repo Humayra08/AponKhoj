@@ -43,6 +43,32 @@ class ChatController extends Controller
     }
 
     /**
+     * GET /api/chat/conversations
+     * Lists past conversations for the current user (logged in) or session_id
+     * (guest), newest first, for the full chat page's history sidebar.
+     */
+    public function listConversations(Request $request)
+    {
+        $user = $request->user('api');
+
+        $query = ChatConversation::query()->orderByDesc('updated_at');
+
+        if ($user) {
+            $query->where('user_id', $user->id);
+        } else {
+            $sessionId = $request->query('session_id');
+            if (!$sessionId) {
+                return response()->json(['conversations' => []]);
+            }
+            $query->where('session_id', $sessionId)->whereNull('user_id');
+        }
+
+        $conversations = $query->limit(30)->get(['id', 'title', 'updated_at']);
+
+        return response()->json(['conversations' => $conversations]);
+    }
+
+    /**
      * GET /api/chat/conversations/{id}
      */
     public function show(Request $request, int $id)

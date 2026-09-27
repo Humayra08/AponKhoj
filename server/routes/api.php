@@ -78,6 +78,7 @@ Route::get('success-stories/{id}', [SuccessStoryController::class, 'publicShow']
 
 // Chatbot routes — optionally authenticated (guest chat works via session_id)
 Route::post('chat/message', [ChatController::class, 'sendMessage'])->middleware('throttle:20,1');
+Route::get('chat/conversations', [ChatController::class, 'listConversations'])->middleware('throttle:60,1');
 Route::get('chat/conversations/{id}', [ChatController::class, 'show'])->middleware('throttle:60,1');
 
 // Admin-only API routes

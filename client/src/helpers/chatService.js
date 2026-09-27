@@ -23,6 +23,40 @@ const storeConversationId = (id) => {
 };
 
 /**
+ * Clears the active conversation so the next sent message starts a fresh one.
+ * Used by the "নতুন আলাপ শুরু করুন" (start new conversation) action.
+ */
+export const startNewConversation = () => {
+  localStorage.removeItem(CONVERSATION_ID_KEY);
+};
+
+/**
+ * Switches the active conversation (e.g. clicking a past conversation in the
+ * history sidebar) without sending a message.
+ */
+export const setActiveConversationId = (id) => {
+  storeConversationId(id);
+};
+
+/**
+ * List past conversations for the current user/session, newest first.
+ */
+export const listConversations = async () => {
+  try {
+    const data = await apiClient.get('/chat/conversations', {
+      params: { session_id: getChatSessionId() },
+    });
+    return { success: true, conversations: data.conversations || [] };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.response?.data?.message || error.message || 'কথোপকথনের তালিকা লোড করা যায়নি',
+      conversations: [],
+    };
+  }
+};
+
+/**
  * Send a chat message. Returns { conversation_id, reply, matched_reports }.
  */
 export const sendChatMessage = async (message) => {
@@ -49,10 +83,12 @@ export const sendChatMessage = async (message) => {
 };
 
 /**
- * Fetch full history for the current conversation, if any.
+ * Fetch full history for a conversation. Defaults to the currently active
+ * (stored) conversation; pass an id explicitly to load a different one from
+ * the history sidebar.
  */
-export const getConversationHistory = async () => {
-  const conversationId = getStoredConversationId();
+export const getConversationHistory = async (explicitConversationId) => {
+  const conversationId = explicitConversationId || getStoredConversationId();
   if (!conversationId) {
     return { success: true, messages: [] };
   }

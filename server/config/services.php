@@ -41,9 +41,9 @@ return [
         'base_url' => env('AI_EMBEDDINGS_URL', 'http://ai-embeddings:8000'),
     ],
 
-    'huggingface' => [
-        'api_key' => env('HUGGINGFACE_API_KEY', ''),
-        'chat_model' => env('HUGGINGFACE_CHAT_MODEL', 'meta-llama/Llama-3.3-70B-Instruct'),
+    'groq' => [
+        'api_key' => env('GROQ_API_KEY', ''),
+        'chat_model' => env('GROQ_CHAT_MODEL', 'openai/gpt-oss-120b'),
     ],
 
 ];

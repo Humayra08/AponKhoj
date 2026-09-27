@@ -12,10 +12,17 @@ class RagPipelineService
     private const MAX_CONTEXT_CHARS = 6000;
     private const MAX_HISTORY_MESSAGES = 8;
 
+    // pgvector cosine DISTANCE (0 = identical, higher = less similar). Without
+    // this cutoff, searchReportsText always returns its top-N hits regardless
+    // of actual relevance — with only a handful of reports in the index, an
+    // unrelated query (e.g. "tell me about this website") would still surface
+    // whatever report happens to be closest, every time.
+    private const MAX_REPORT_DISTANCE = 0.55;
+
     public function __construct(
         private EmbeddingClientService $embeddingClient,
         private VectorIndexService $vectorIndex,
-        private HuggingFaceChatService $chatService,
+        private GroqChatService $chatService,
     ) {
     }
 
@@ -30,6 +37,10 @@ class RagPipelineService
             'role' => 'user',
             'content' => $userMessage,
         ]);
+
+        if ($conversation->title === null) {
+            $conversation->update(['title' => mb_substr($userMessage, 0, 60)]);
+        }
 
         $retrieved = $this->retrieve($userMessage);
         $context = $this->buildContext($retrieved);
@@ -67,7 +78,12 @@ class RagPipelineService
         $kbHits = $this->vectorIndex->searchKb($queryEmbedding, 4);
         $reportHits = $this->vectorIndex->searchReportsText($queryEmbedding, 6);
 
-        $reports = $this->hydrateReportHits($reportHits);
+        $relevantReportHits = array_values(array_filter(
+            $reportHits,
+            fn ($hit) => ($hit['score'] ?? 1.0) <= self::MAX_REPORT_DISTANCE
+        ));
+
+        $reports = $this->hydrateReportHits($relevantReportHits);
 
         return [
             'kb' => $kbHits,
