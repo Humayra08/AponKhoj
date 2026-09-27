@@ -1,6 +1,7 @@
 import { Route, Routes, useLocation } from 'react-router';
 import Navbar from './Components/Navbar';
 import Footer from './Components/Footer';
+import ChatWidget from './Components/ChatWidget';
 import ScrollToTop from './Components/ScrollToTop';
 import HomePage from './views/HomePage';
 import LoginPage from './views/LoginPage';
@@ -33,19 +34,23 @@ import ContactPage from './views/ContactPage';
 import EmergencyDetailsPage from './views/EmergencyDetailsPage';
 import FoundReportDetailsPage from './views/FoundReportDetailsPage';
 import GoogleAuthCallbackPage from './views/GoogleAuthCallbackPage';
+import ChatPage from './views/ChatPage';
 
 function AppShell() {
   const { pathname } = useLocation();
   const isAdminRoute = pathname.startsWith('/admin');
+  const isChatPageRoute = pathname.startsWith('/assistant');
+  const hideChrome = isAdminRoute || isChatPageRoute;
 
   return (
     <div className="flex flex-col min-h-screen">
       <ScrollToTop />
-      {!isAdminRoute && <Navbar />}
+      {!hideChrome && <Navbar />}
       <main className="flex-grow">
         <Routes>
           {/* Public / User routes */}
           <Route path="/" element={<HomePage />} />
+          <Route path="/assistant" element={<ChatPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/auth/google/callback" element={<GoogleAuthCallbackPage />} />
           <Route path="/register" element={<RegistrationPage />} />
@@ -77,7 +82,8 @@ function AppShell() {
           <Route path="/admin/success-stories" element={<AdminRoute><AdminSuccessStoriesPage /></AdminRoute>} />
         </Routes>
       </main>
-      {!isAdminRoute && <Footer />}
+      {!hideChrome && <Footer />}
+      {!hideChrome && <ChatWidget />}
       <Toaster
         position="top-center"
         toastOptions={{

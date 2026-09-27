@@ -36,6 +36,14 @@ return [
         'token'    => env('GIOSMS_TOKEN'),
        'sender_id' => env('GIOSMS_SENDER_ID', ''),
     ],
-   
+
+    'ai_embeddings' => [
+        'base_url' => env('AI_EMBEDDINGS_URL', 'http://ai-embeddings:8000'),
+    ],
+
+    'groq' => [
+        'api_key' => env('GROQ_API_KEY', ''),
+        'chat_model' => env('GROQ_CHAT_MODEL', 'openai/gpt-oss-120b'),
+    ],
 
 ];

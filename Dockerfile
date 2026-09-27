@@ -1,46 +1,16 @@
-# Use an official PHP image with Apache
 FROM php:8.2-apache
 
-# ENV Arguments 
-ARG APP_NAME
-ARG APP_ENV
-ARG APP_KEY
-ARG APP_DEBUG
-ARG APP_URL
-ARG FRONTEND_URL
-ARG LOG_LEVEL
-ARG DB_CONNECTION
-ARG DB_HOST
-ARG DB_PORT
-ARG DB_DATABASE
-ARG DB_USERNAME
-ARG DB_PASSWORD
-ARG JWT_SECRET
-
-# Mail configuration
-ARG MAIL_MAILER=log
-ARG MAIL_HOST=smtp.mailtrap.io
-ARG MAIL_PORT=2525
-ARG MAIL_USERNAME=null
-ARG MAIL_PASSWORD=null
-ARG MAIL_ENCRYPTION=tls
-ARG MAIL_FROM_ADDRESS=noreply@aponkhoj.com
-ARG MAIL_FROM_NAME="${APP_NAME}"
-
-# Redis configuration
-ARG REDIS_HOST=redis
-ARG REDIS_PORT=6379
-ARG REDIS_CLIENT=predis
-
-ARG VITE_BACKEND_ENDPOINT
+ARG APP_URL=http://localhost
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     git \
     curl \
+    cron \
     libpng-dev \
     libonig-dev \
     libxml2-dev \
+    libpq-dev \
     zip \
     unzip
 
@@ -54,11 +24,8 @@ RUN a2enmod rewrite
 # Clear cache
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Install PHP extensions
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
-
-# Install Redis PHP extension via PECL
-RUN pecl install redis && docker-php-ext-enable redis
+# Install PHP extensions (pdo_pgsql for the Supabase/pgvector chatbot connection)
+RUN docker-php-ext-install pdo_mysql pdo_pgsql mbstring exif pcntl bcmath gd
 
 # Set Apache document root to Laravel public directory
 ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
@@ -75,36 +42,8 @@ COPY client/ /var/www/html/client
 # Set working directory
 WORKDIR /var/www/html
 
-# Install Laravel dependencies (including predis)
-RUN composer require predis/predis && composer install
-
-# Set environment variables for server
-RUN touch .env && \
-    echo "APP_NAME=${APP_NAME}" >> .env && \
-    echo "APP_ENV=${APP_ENV}" >> .env && \
-    echo "APP_KEY=${APP_KEY}" >> .env && \
-    echo "APP_DEBUG=${APP_DEBUG}" >> .env && \
-    echo "APP_URL=${APP_URL}" >> .env && \
-    echo "FRONTEND_URL=${FRONTEND_URL}" >> .env && \
-    echo "LOG_LEVEL=${LOG_LEVEL}" >> .env && \
-    echo "DB_CONNECTION=${DB_CONNECTION}" >> .env && \
-    echo "DB_HOST=${DB_HOST}" >> .env && \
-    echo "DB_PORT=${DB_PORT}" >> .env && \
-    echo "DB_DATABASE=${DB_DATABASE}" >> .env && \
-    echo "DB_USERNAME=${DB_USERNAME}" >> .env && \
-    echo "DB_PASSWORD=${DB_PASSWORD}" >> .env && \
-    echo "JWT_SECRET=${JWT_SECRET}" >> .env && \
-    echo "MAIL_MAILER=${MAIL_MAILER}" >> .env && \
-    echo "MAIL_HOST=${MAIL_HOST}" >> .env && \
-    echo "MAIL_PORT=${MAIL_PORT}" >> .env && \
-    echo "MAIL_USERNAME=${MAIL_USERNAME}" >> .env && \
-    echo "MAIL_PASSWORD=${MAIL_PASSWORD}" >> .env && \
-    echo "MAIL_ENCRYPTION=${MAIL_ENCRYPTION}" >> .env && \
-    echo "MAIL_FROM_ADDRESS=${MAIL_FROM_ADDRESS}" >> .env && \
-    echo "MAIL_FROM_NAME=\"${MAIL_FROM_NAME}\"" >> .env && \
-    echo "REDIS_HOST=${REDIS_HOST}" >> .env && \
-    echo "REDIS_PORT=${REDIS_PORT}" >> .env && \
-    echo "REDIS_CLIENT=${REDIS_CLIENT}" >> .env
+# Install Laravel dependencies
+RUN composer install
 
 # Set permissions for Laravel storage and cache
 RUN chown -R www-data:www-data /var/www/html && \
@@ -119,8 +58,18 @@ RUN cd client && npm install && npm run build
 # Move React build to Laravel public directory
 RUN cp -r client/dist/* public/
 
+# Laravel scheduler: run `php artisan schedule:run` every minute via cron.
+# Kernel::schedule() decides what actually fires (currently: chat:resync-embeddings hourly).
+RUN echo "* * * * * www-data cd /var/www/html && php artisan schedule:run >> /dev/null 2>&1" > /etc/cron.d/laravel-scheduler && \
+    chmod 0644 /etc/cron.d/laravel-scheduler && \
+    crontab /etc/cron.d/laravel-scheduler
+
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
 # Expose port 80 for Apache
 EXPOSE 80
 
-# Start Apache server
+# Start cron (for the Laravel scheduler) alongside Apache
+ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["apache2-foreground"]

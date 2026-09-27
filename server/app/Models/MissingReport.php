@@ -52,6 +52,7 @@ class MissingReport extends Model
         'approved' => 'boolean',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'embedding_indexed_at' => 'datetime',
     ];
 
     /**
